@@ -69,7 +69,7 @@
     "functionAppName": "[concat(variables('resourceNamePrefix'), 'wkr-fa')]",
     "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
     "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
-    "contractApproverSubscriptionName": "[concat('contract-approver-subscription-', parameters('resourceEnvironmentName'))]",
+    "contractNotifierSubscriptionName": "[concat('contract-notifier-subscription-', parameters('resourceEnvironmentName'))]",
     "EnableAlertsAndMetrics": "[equals(parameters('resourceEnvironmentName'), 'release')]",
     "AppServiceMetricsToAlertUpon": [
       {
@@ -137,6 +137,54 @@
     },
     {
       "apiVersion": "2017-05-10",
+      "name": "contract-notifier-service-bus-topic",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "contract-notifier-service-bus-subscription",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          },
+          "serviceBusTopicSubscriptionName": {
+            "value": "[variables('contractNotifierSubscriptionName')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "contract-notifier-service-bus-topic"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
       "name": "function-app",
       "type": "Microsoft.Resources/deployments",
       "properties": {
@@ -190,8 +238,8 @@
                 "value": "[variables('contractNotificationTopicName')]"
               },
               {
-                "name": "Pds.Contracts.Approval.Subscription",
-                "value": "[variables('contractApproverSubscriptionName')]"
+                "name": "Pds.Contracts.Notifier.Subscription",
+                "value": "[variables('contractNotifierSubscriptionName')]"
               },
               {
                 "name": "sb-connection-string",
