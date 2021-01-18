@@ -28,6 +28,13 @@
     "sharedAppInsightsName": {
       "type": "string"
     },
+    "sharedServiceBusName": {
+      "type": "string"
+    },
+    "servicebusAccessKeyName": {
+      "type": "string",
+      "defaultValue": "RootManagedAccessKey"
+    },
     "sharedStorageAccountName": {
       "type": "string"
     },
@@ -61,6 +68,8 @@
     "resourceNamePrefix": "[toLower(concat('pds-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
     "functionAppName": "[concat(variables('resourceNamePrefix'), 'wkr-fa')]",
     "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
+    "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
+    "contractApproverSubscriptionName": "[concat('contract-approver-subscription-', parameters('resourceEnvironmentName'))]",
     "EnableAlertsAndMetrics": "[equals(parameters('resourceEnvironmentName'), 'release')]",
     "AppServiceMetricsToAlertUpon": [
       {
@@ -175,6 +184,18 @@
               {
                 "name": "PdsApplicationInsights:Environment",
                 "value": "[parameters('resourceEnvironmentName')]"
+              },
+              {
+                "name": "Pds.Contracts.Notifications.Topic",
+                "value": "[variables('contractNotificationTopicName')]"
+              },
+              {
+                "name": "Pds.Contracts.Approval.Subscription",
+                "value": "[variables('contractApproverSubscriptionName')]"
+              },
+              {
+                "name": "sb-connection-string",
+                "value": "[concat('Endpoint=sb://', parameters('sharedServiceBusName'), '.servicebus.windows.net/;SharedAccessKeyName=', parameters('serviceBusAccessKeyName'), ';SharedAccessKey=',listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString)]"
               }
             ]
           }
