@@ -7,21 +7,20 @@ using System.Threading.Tasks;
 
 namespace Pds.Contracts.Notifications.Func.Tests.Unit
 {
-    [TestClass]
-    public class ExampleServiceBusFunctionTests
+    [TestClass, TestCategory("Unit")]
+    public class ContractsReminderTimerFunctionTests
     {
-        [TestMethod, TestCategory("Integration")]
+        [TestMethod]
         public void Run_DoesNotThrowException()
         {
             // Arrange
-            var mockExampleService = new Mock<IExampleService>();
+            var mockExampleService = new Mock<IContractNotificationService>();
 
             mockExampleService
-                .Setup(e => e.Hello())
-                .ReturnsAsync(string.Empty)
+                .Setup(e => e.RemindContractsReadyForSigning())
                 .Verifiable();
 
-            var function = new ExampleServiceBusFunction(mockExampleService.Object);
+            var function = new ContractsReminderTimerFunction(mockExampleService.Object);
 
             // Act
             Func<Task> act = async () => { await function.Run(null, null); };

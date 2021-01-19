@@ -222,6 +222,10 @@
                 "value": "dotnet"
               },
               {
+                "name": "WEBSITE_TIME_ZONE",
+                "value": "GMT Standard Time"
+              },
+              {
                 "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
                 "value": "[reference(resourceId(parameters('sharedResourceGroupName'), 'microsoft.insights/components', parameters('sharedAppInsightsName')),'2015-05-01').InstrumentationKey]"
               },

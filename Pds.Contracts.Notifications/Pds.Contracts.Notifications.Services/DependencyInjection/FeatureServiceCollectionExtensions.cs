@@ -16,7 +16,7 @@ namespace Pds.Contracts.Notifications.Services.DependencyInjection
         /// <returns>A reference to this instance after the operation has completed.</returns>
         public static IServiceCollection AddFeatureServices(this IServiceCollection services)
         {
-            services.AddSingleton<IExampleService, ExampleService>();
+            services.AddSingleton<IContractNotificationService, ContractNotificationService>();
 
             return services;
         }
