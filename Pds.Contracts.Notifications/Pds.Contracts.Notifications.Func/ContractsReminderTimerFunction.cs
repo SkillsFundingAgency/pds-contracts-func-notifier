@@ -30,7 +30,7 @@ namespace Pds.Contracts.Notifications.Func
         /// <returns>Async task.</returns>
         [FunctionName("ContractsReminderTimerFunction")]
         public async Task Run(
-            [TimerTrigger("0 0 8 * * *	")] TimerInfo timer,
+            [TimerTrigger("0 0 8 * * *")] TimerInfo timer,
             ILogger log)
         {
             log?.LogInformation($"[Start] Timer trigger contracts reminder function started execution at: {DateTime.Now}.");
