@@ -203,6 +203,15 @@
           "appServicePlanResourceGroup": {
             "value": "[resourceGroup().name]"
           },
+          "functionAppConnectionStrings": {
+            "value": [
+              {
+                "name": "sb-connection-string",
+                "connectionString": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]",
+                "type": "Custom"
+              }
+            ]
+          },
           "functionAppAppSettings": {
             "value": [
               {
@@ -244,10 +253,6 @@
               {
                 "name": "Pds.Contracts.Notifier.Subscription",
                 "value": "[variables('contractNotifierSubscriptionName')]"
-              },
-              {
-                "name": "sb-connection-string",
-                "value": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]"
               }
             ]
           }
