@@ -72,29 +72,6 @@
     "contractNotifierSubscriptionName": "[concat('contract-notifier-subscription-', parameters('resourceEnvironmentName'))]",
     "EnvironmentToEnableAlertsUpon": ["demo", "oat", "release"],
     "EnableAlertsAndMetrics": "[contains(variables('EnvironmentToEnableAlertsUpon'), toLower(parameters('resourceEnvironmentName')))]",
-    "AppServiceMetricsToAlertUpon": [
-      {
-        "MetricName": "Http5xx",
-        "Operator": "GreaterThanOrEqual",
-        "Threshold": "[parameters('HttpServerErrorAlertThreshhold')]",
-        "TimeWindow": "PT5M",
-        "Aggregation": "Total"
-      },
-      {
-        "MetricName": "AverageResponseTime",
-        "Operator": "GreaterThanOrEqual",
-        "Threshold": "[parameters('AverageResponseTimeAlertThreshhold')]",
-        "TimeWindow": "PT5M",
-        "Aggregation": "Average"
-      },
-      {
-        "MetricName": "Requests",
-        "Operator": "GreaterThanOrEqual",
-        "Threshold": "[parameters('RequestCountAlertThreshhold')]",
-        "TimeWindow": "PT5M",
-        "Aggregation": "Average"
-      }
-    ],
     "AppServicePlanMetricsToAlertUpon": [
       {
         "MetricName": "CpuPercentage",
@@ -318,63 +295,6 @@
       },
       "dependsOn": [
         "app-service-plan"
-      ]
-    },
-    {
-      "apiVersion": "2017-05-10",
-      "name": "[concat(variables('functionAppName'), '-metric-', tolower(variables('AppServiceMetricsToAlertUpon')[copyIndex()].MetricName))]",
-      "type": "Microsoft.Resources/deployments",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules.json')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "enabled": {
-            "value": "[variables('EnableAlertsAndMetrics')]"
-          },
-          "alertName": {
-            "value": "[concat(variables('functionAppName'), '-metric-', tolower(variables('AppServiceMetricsToAlertUpon')[copyIndex()].MetricName))]"
-          },
-          "alertSeverity": {
-            "value": 3
-          },
-          "metricName": {
-            "value": "[variables('AppServiceMetricsToAlertUpon')[copyIndex()].MetricName]"
-          },
-          "operator": {
-            "value": "[variables('AppServiceMetricsToAlertUpon')[copyIndex()].Operator]"
-          },
-          "threshold": {
-            "value": "[variables('AppServiceMetricsToAlertUpon')[copyIndex()].Threshold]"
-          },
-          "aggregation": {
-            "value": "[variables('AppServiceMetricsToAlertUpon')[copyIndex()].Aggregation]"
-          },
-          "windowSize": {
-            "value": "[variables('AppServiceMetricsToAlertUpon')[copyIndex()].TimeWindow]"
-          },
-          "evaluationFrequency": {
-            "value": "PT1M"
-          },
-          "actionGroupName": {
-            "value": "[parameters('ActionGroupName')]"
-          },
-          "actionGroupResourceGroup": {
-            "value": "[parameters('sharedResourceGroupName')]"
-          },
-          "resourceId": {
-            "value": "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
-          }
-        }
-      },
-      "copy": {
-        "name": "AppServiceMetricCopy",
-        "count": "[length(variables('AppServiceMetricsToAlertUpon'))]"
-      },
-      "dependsOn": [
-        "function-app"
       ]
     }
   ],
