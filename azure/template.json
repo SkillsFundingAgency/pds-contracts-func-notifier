@@ -296,6 +296,76 @@
       "dependsOn": [
         "app-service-plan"
       ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "[concat(variables('functionAppName'), '-failed-contracts-notifier-timer-execution')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules-app-insights-query.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "enabled": {
+            "value": "[variables('EnableAlertsAndMetrics')]"
+          },
+          "alertName": {
+            "value": "[concat(variables('functionAppName'), '-failed-contracts-notifier-timer-execution')]"
+          },
+          "query": {
+            "value": "requests | where name==\"ContractsReminderTimerFunction\" | where success == false"
+          },
+          "actionGroupResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "actionGroupName": {
+            "value": "[parameters('ActionGroupName')]"
+          },
+          "appInsightsResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "appInsightsName":{
+            "value": "[parameters('sharedAppInsightsName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-notifier-failed-contracts-noficiation-sb')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules-app-insights-query.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "enabled": {
+            "value": "[variables('EnableAlertsAndMetrics')]"
+          },
+          "alertName": {
+            "value": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-notifier-failed-contracts-noficiation-sb')]"
+          },
+          "query": {
+            "value": "requests | where name==\"ContractChangeNotificationsServiceBusFunction\" | where success == false"
+          },
+          "actionGroupResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "actionGroupName": {
+            "value": "[parameters('ActionGroupName')]"
+          },
+          "appInsightsResourceGroup": {
+            "value": "[parameters('sharedResourceGroupName')]"
+          },
+          "appInsightsName":{
+            "value": "[parameters('sharedAppInsightsName')]"
+          }
+        }
+      }
     }
   ],
   "outputs": {
