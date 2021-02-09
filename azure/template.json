@@ -299,7 +299,7 @@
     },
     {
       "apiVersion": "2017-05-10",
-      "name": "[concat(variables('functionAppName'), '-failed-contracts-notifier-timer-execution')]",
+      "name": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-notifier-failed-contracts-noficiation-tm')]",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "Incremental",
@@ -312,7 +312,7 @@
             "value": "[variables('EnableAlertsAndMetrics')]"
           },
           "alertName": {
-            "value": "[concat(variables('functionAppName'), '-failed-contracts-notifier-timer-execution')]"
+            "value": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-notifier-failed-contracts-noficiation-tm')]"
           },
           "query": {
             "value": "requests | where name==\"ContractsReminderTimerFunction\" | where success == false"
