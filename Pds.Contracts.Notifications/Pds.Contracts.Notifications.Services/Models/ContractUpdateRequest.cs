@@ -1,23 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Pds.Contracts.Notifications.Services.Models
+﻿namespace Pds.Contracts.Notifications.Services.Models
 {
     /// <summary>
-    /// Contract object.
+    /// A request object to send to the Data API to update contracts.
     /// </summary>
-    public class Contract
+    public class ContractUpdateRequest
     {
         /// <summary>
-        /// Gets or sets contract Id.
+        /// Gets or sets the contract id.
         /// </summary>
         public int Id { get; set; }
-
-        /// <summary>
-        /// Gets or sets contract Ukprn.
-        /// </summary>
-        public int Ukprn { get; set; }
 
         /// <summary>
         /// Gets or sets the contract number.

@@ -9,16 +9,23 @@ namespace Pds.Contracts.Notifications.Services.Interfaces
     public interface IContractNotificationService
     {
         /// <summary>
-        /// Reminds contracts that are ready for signing.
+        /// Retrieves a list of contracts that are overdue for signing.
         /// </summary>
         /// <returns>Async task.</returns>
-        Task RemindContractsReadyForSigning();
+        Task<ContractReminders> GetOverdueContracts();
+
+        /// <summary>
+        /// Queues a reminder email to be sent for the contract.
+        /// </summary>
+        /// <param name="contract">Contract to send a reminder for.</param>
+        /// <returns>Async task.</returns>
+        Task QueueContractEmailReminderMessage(Contract contract);
 
         /// <summary>
         /// Notifies about changes to the contract.
         /// </summary>
         /// <param name="contractChange">Changed contract.</param>
         /// <returns>Async task.</returns>
-        Task NotifyContractChanges(Contract contractChange);
+        Task NotifyContractReminderSent(Contract contractChange);
     }
 }

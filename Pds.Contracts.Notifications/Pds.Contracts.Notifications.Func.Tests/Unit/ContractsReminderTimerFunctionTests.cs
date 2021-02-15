@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Pds.Contracts.Notifications.Services.Interfaces;
@@ -14,20 +15,21 @@ namespace Pds.Contracts.Notifications.Func.Tests.Unit
         public void Run_DoesNotThrowException()
         {
             // Arrange
-            var mockExampleService = new Mock<IContractNotificationService>();
+            var mockService = new Mock<IContractReminderProcessingService>(MockBehavior.Strict);
 
-            mockExampleService
-                .Setup(e => e.RemindContractsReadyForSigning())
+            mockService
+                .Setup(e => e.IssueContractReminders())
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var function = new ContractsReminderTimerFunction(mockExampleService.Object);
+            var function = new ContractsReminderTimerFunction(mockService.Object);
 
             // Act
             Func<Task> act = async () => { await function.Run(null, null); };
 
             // Assert
             act.Should().NotThrow();
-            mockExampleService.Verify();
+            mockService.Verify();
         }
     }
 }

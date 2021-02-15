@@ -11,13 +11,13 @@ namespace Pds.Contracts.Notifications.Func
     /// </summary>
     public class ContractsReminderTimerFunction
     {
-        private readonly IContractNotificationService _contractReminderService;
+        private readonly IContractReminderProcessingService _contractReminderService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractsReminderTimerFunction"/> class.
         /// </summary>
         /// <param name="contractReminderService">The example service.</param>
-        public ContractsReminderTimerFunction(IContractNotificationService contractReminderService)
+        public ContractsReminderTimerFunction(IContractReminderProcessingService contractReminderService)
         {
             _contractReminderService = contractReminderService;
         }
@@ -35,7 +35,7 @@ namespace Pds.Contracts.Notifications.Func
         {
             log?.LogInformation($"[Start] Timer trigger contracts reminder function started execution at: {DateTime.Now}.");
 
-            await _contractReminderService.RemindContractsReadyForSigning();
+            await _contractReminderService.IssueContractReminders();
 
             log?.LogInformation($"[End] Timer trigger contracts reminder function completed execution at: {DateTime.Now}.");
         }
