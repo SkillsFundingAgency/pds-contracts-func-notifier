@@ -31,24 +31,8 @@
     "sharedServiceBusName": {
       "type": "string"
     },
-    "servicebusAccessKeyName": {
-      "type": "string",
-      "defaultValue": "RootManagedAccessKey"
-    },
     "sharedStorageAccountName": {
       "type": "string"
-    },
-    "AverageResponseTimeAlertThreshhold": {
-      "type": "string",
-      "defaultValue": "2"
-    },
-    "HttpServerErrorAlertThreshhold": {
-      "type": "string",
-      "defaultValue": "50"
-    },
-    "RequestCountAlertThreshhold": {
-      "type": "string",
-      "defaultValue": "1000"
     },
     "ActionGroupName": {
       "type": "string",
@@ -61,6 +45,82 @@
     "MemoryPercentageAlertThreshhold": {
       "type": "string",
       "defaultValue": "75"
+    },
+    "ContractApiBaseAddress": {
+      "type": "string"
+    },
+    "ContractApiTenantId": {
+      "type": "string"
+    },
+    "ContractApiClientId": {
+      "type": "string"
+    },
+    "ContractApiClientSecret": {
+      "type": "securestring"
+    },
+    "ContractApiAppUri": {
+      "type": "string"
+    },
+    "AuditApiBaseAddress": {
+      "type": "string"
+    },
+    "AuditApiTenantId": {
+      "type": "string"
+    },
+    "AuditApiClientId": {
+      "type": "string"
+    },
+    "AuditApiClientSecret": {
+      "type": "securestring"
+    },
+    "AuditApiAppUri": {
+      "type": "string"
+    },
+    "ServiceBusConnectionString": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The connection string to the monoliths service bus"
+      }
+    },
+    "ContractApiContractRemindersEndpoint": {
+      "type": "string",
+      "defaultValue": "/api/contractReminders"
+    },
+    "ContractApiContractRemindersEndpointReminderInterval": {
+      "type": "string",
+      "defaultValue": "14"
+    },
+    "ContractApiContractRemindersEndpointPage": {
+      "type": "string",
+      "defaultValue": "1"
+    },
+    "ContractApiContractRemindersEndpointCount": {
+      "type": "string",
+      "defaultValue": "25"
+    },
+    "ContractApiContractReminderPatchEndpoint": {
+      "type": "string",
+      "defaultValue": "/api/contractReminder"
+    },
+    "AuditApiCreateAuditEntryEndpoint": {
+      "type": "string",
+      "defaultValue": "/api/audit"
+    },
+    "HttpPolicyRetryCount": {
+      "type": "string",
+      "defaultValue": "3"
+    },
+    "HttpPolicyRetryBackoffPower": {
+      "type": "string",
+      "defaultValue": "2"
+    },
+    "HttpPolicyCircuitBreakerTolerance": {
+      "type": "string",
+      "defaultValue": "5"
+    },
+    "HttpPolicyDurationOfCircuitBreak": {
+      "type": "string",
+      "defaultValue": "0.00:00:15"
     }
   },
   "variables": {
@@ -70,6 +130,7 @@
     "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
     "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
     "contractNotifierSubscriptionName": "[concat('contract-notifier-subscription-', parameters('resourceEnvironmentName'))]",
+    "emailQueueName": "[concat('contractsqueue-', parameters('resourceEnvironmentName'))]",
     "EnvironmentToEnableAlertsUpon": ["demo", "oat", "release"],
     "EnableAlertsAndMetrics": "[contains(variables('EnvironmentToEnableAlertsUpon'), toLower(parameters('resourceEnvironmentName')))]",
     "AppServicePlanMetricsToAlertUpon": [
@@ -181,15 +242,6 @@
           "appServicePlanResourceGroup": {
             "value": "[resourceGroup().name]"
           },
-          "functionAppConnectionStrings": {
-            "value": [
-              {
-                "name": "sb-connection-string",
-                "connectionString": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]",
-                "type": "Custom"
-              }
-            ]
-          },
           "functionAppAppSettings": {
             "value": [
               {
@@ -231,7 +283,104 @@
               {
                 "name": "Pds.Contracts.Notifier.Subscription",
                 "value": "[variables('contractNotifierSubscriptionName')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ApiBaseAddress",
+                "value": "[parameters('ContractApiBaseAddress')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:Authority",
+                "value": "https://login.microsoftonline.com/"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:TenantId",
+                "value": "[parameters('ContractApiTenantId')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ClientId",
+                "value": "[parameters('ContractApiClientId')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ClientSecret",
+                "value": "[parameters('ContractApiClientSecret')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:AppUri",
+                "value": "[parameters('ContractApiAppUri')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:Endpoint",
+                "value": "[parameters('ContractApiContractRemindersEndpoint')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:QueryParameters:reminderInterval",
+                "value": "[parameters('ContractApiContractRemindersEndpointReminderInterval')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:QueryParameters:page",
+                "value": "[parameters('ContractApiContractRemindersEndpointPage')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:QueryParameters:count",
+                "value": "[parameters('ContractApiContractRemindersEndpointCount')]"
+              },
+              {
+                "name": "ContractsDataApiConfiguration:ContractReminderPatchEndpoint:Endpoint",
+                "value": "[parameters('ContractApiContractReminderPatchEndpoint')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ApiBaseAddress",
+                "value": "[parameters('AuditApiBaseAddress')]"
+              },
+              {
+                "name": "AuditApiConfiguration:Authority",
+                "value": "https://login.microsoftonline.com/"
+              },
+              {
+                "name": "AuditApiConfiguration:TenantId",
+                "value": "[parameters('AuditApiTenantId')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ClientId",
+                "value": "[parameters('AuditApiClientId')]"
+              },
+              {
+                "name": "AuditApiConfiguration:ClientSecret",
+                "value": "[parameters('AuditApiClientSecret')]"
+              },
+              {
+                "name": "AuditApiConfiguration:AppUri",
+                "value": "[parameters('AuditApiAppUri')]"
+              },
+              {
+                "name": "AuditApiConfiguration:CreateAuditEntryEndpoint:Endpoint",
+                "value": "[parameters('AuditApiCreateAuditEntryEndpoint')]"
+              },
+              {
+                "name": "HttpPolicyOptions:HttpRetryCount",
+                "value": "[parameters('HttpPolicyRetryCount')]"
+              },
+              {
+                "name": "HttpPolicyOptions:HttpRetryBackoffPower",
+                "value": "[parameters('HttpPolicyRetryBackoffPower')]"
+              },
+              {
+                "name": "HttpPolicyOptions:CircuitBreakerToleranceCount",
+                "value": "[parameters('HttpPolicyCircuitBreakerTolerance')]"
+              },
+              {
+                "name": "HttpPolicyOptions:CircuitBreakerDurationOfBreak",
+                "value": "[parameters('HttpPolicyDurationOfCircuitBreak')]"
+              },
+              {
+                "name": "ServiceBusConfiguration:ConnectionString",
+                "value": "[parameters('ServiceBusConnectionString')]"
+              },
+              {
+                "name": "ServiceBusConfiguration:QueueName",
+                "value": "[variables('emailQueueName')]"
               }
+              
             ]
           }
         }
@@ -316,41 +465,6 @@
           },
           "query": {
             "value": "requests | where name==\"ContractsReminderTimerFunction\" | where success == false"
-          },
-          "actionGroupResourceGroup": {
-            "value": "[parameters('sharedResourceGroupName')]"
-          },
-          "actionGroupName": {
-            "value": "[parameters('ActionGroupName')]"
-          },
-          "appInsightsResourceGroup": {
-            "value": "[parameters('sharedResourceGroupName')]"
-          },
-          "appInsightsName":{
-            "value": "[parameters('sharedAppInsightsName')]"
-          }
-        }
-      }
-    },
-    {
-      "apiVersion": "2017-05-10",
-      "name": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-notifier-failed-contracts-noficiation-sb')]",
-      "type": "Microsoft.Resources/deployments",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[concat(variables('deploymentUrlBase'), 'alert-rules-app-insights-query.json')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "enabled": {
-            "value": "[variables('EnableAlertsAndMetrics')]"
-          },
-          "alertName": {
-            "value": "[concat('pds-', parameters('resourceEnvironmentName'), '-contracts-notifier-failed-contracts-noficiation-sb')]"
-          },
-          "query": {
-            "value": "requests | where name==\"ContractChangeNotificationsServiceBusFunction\" | where success == false"
           },
           "actionGroupResourceGroup": {
             "value": "[parameters('sharedResourceGroupName')]"
