@@ -3,7 +3,7 @@
     /// <summary>
     /// Service bus configuration properties.
     /// </summary>
-    public class ServiceBusConfiguration
+    public class MonolithServiceBusConfiguration
     {
         /// <summary>
         /// Gets or sets the connection string.

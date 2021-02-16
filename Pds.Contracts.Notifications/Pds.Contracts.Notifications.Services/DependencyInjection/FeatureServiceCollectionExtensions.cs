@@ -54,8 +54,8 @@ namespace Pds.Contracts.Notifications.Services.DependencyInjection
 
         private static IServiceCollection AddAzureServiceBusSender(this IServiceCollection services, IConfiguration config)
         {
-            var sbSettings = new ServiceBusConfiguration();
-            config.GetSection(nameof(ServiceBusConfiguration)).Bind(sbSettings);
+            var sbSettings = new MonolithServiceBusConfiguration();
+            config.GetSection(nameof(MonolithServiceBusConfiguration)).Bind(sbSettings);
 
             services.AddSingleton<IMessageSender, MessageSender>(
                 provider => ActivatorUtilities.CreateInstance<MessageSender>(
