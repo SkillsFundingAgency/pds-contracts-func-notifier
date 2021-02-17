@@ -76,7 +76,7 @@
     "AuditApiAppUri": {
       "type": "string"
     },
-    "ServiceBusConnectionString": {
+    "MonolithServiceBusConnectionString": {
       "type": "securestring",
       "metadata": {
         "description": "The connection string to the monoliths service bus"
@@ -373,11 +373,11 @@
                 "value": "[parameters('HttpPolicyDurationOfCircuitBreak')]"
               },
               {
-                "name": "ServiceBusConfiguration:ConnectionString",
-                "value": "[parameters('ServiceBusConnectionString')]"
+                "name": "MonolithServiceBusConfiguration:ConnectionString",
+                "value": "[parameters('MonolithServiceBusConnectionString')]"
               },
               {
-                "name": "ServiceBusConfiguration:QueueName",
+                "name": "MonolithServiceBusConfiguration:QueueName",
                 "value": "[variables('emailQueueName')]"
               }
               
