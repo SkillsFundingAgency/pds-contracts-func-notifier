@@ -2,6 +2,7 @@
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.Interfaces;
 using Pds.Contracts.Notifications.Services.Models;
@@ -23,11 +24,6 @@ namespace Pds.Contracts.Notifications.Services.Implementations
     /// </summary>
     public class ContractNotificationService : BaseApiClient<ContractsDataApiConfiguration>, IContractNotificationService, IHttpApiClientPatch
     {
-        /// <summary>
-        /// Enum value from the ProviderDigitalServices (monolith).
-        /// </summary>
-        public const int Audit_ActionType_ContractEmailReminderQueued = 28;
-
         /// <summary>
         /// The audit user.
         /// </summary>
@@ -69,6 +65,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         public async Task<ContractReminders> GetOverdueContracts()
         {
             string querystring = CreateQueryString(_dataApiConfiguration.ContractReminderEndpoint);
+            _logger.LogInformation($"Requesting a list of contracts with overdue reminders with querystring {querystring}.");
             return await GetWithAADAuth<ContractReminders>(querystring);
         }
 
@@ -80,11 +77,11 @@ namespace Pds.Contracts.Notifications.Services.Implementations
             var message = new ContractReminderMessage() { ContractId = contract.Id };
             await _sbMessagingService.SendMessageAsync(message);
 
-            await _auditService.CreateAudit(
-                new Audit()
+            await _auditService.AuditAsync(
+                new Pds.Audit.Api.Client.Models.Audit
                 {
                     Severity = 0,
-                    Action = Audit_ActionType_ContractEmailReminderQueued,
+                    Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
                     Ukprn = contract.Ukprn,
                     Message = $"Email reminder has been queued for contract with Id [{contract.Id}].",
                     User = Audit_User_System
@@ -104,11 +101,11 @@ namespace Pds.Contracts.Notifications.Services.Implementations
             _logger.LogInformation($"Updating the last reminder date on contract with id [{contract.ContractNumber}].");
             await PatchWithAADAuth(_dataApiConfiguration.ContractReminderPatchEndpoint.Endpoint, updateRequest);
 
-            await _auditService.CreateAudit(
-                new Audit
+            await _auditService.AuditAsync(
+                new Pds.Audit.Api.Client.Models.Audit
                 {
                     Severity = 0,
-                    Action = Audit_ActionType_ContractEmailReminderQueued,
+                    Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
                     Ukprn = contract.Ukprn,
                     Message = $"Updated 'Last email reminder sent date' for contract with Id {contract.Id}",
                     User = Audit_User_System

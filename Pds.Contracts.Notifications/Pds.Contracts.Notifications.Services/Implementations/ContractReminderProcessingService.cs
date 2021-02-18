@@ -37,6 +37,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                 reminders = await _contractNotificationService.GetOverdueContracts();
                 if (reminders?.Contracts?.Count > 0)
                 {
+                    _logger.LogInformation($"Processing a list of contracts with {reminders.Contracts.Count} records.");
                     IList<Task> tasks = new List<Task>();
                     foreach (var contract in reminders.Contracts)
                     {

@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json;
+using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.Implementations;
 using Pds.Contracts.Notifications.Services.Interfaces;
@@ -65,6 +66,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var contracts = CreateContractReminders();
             var stringContent = new StringContent(JsonConvert.SerializeObject(contracts));
 
+            Mock.Get(_contractsLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
+
             _mockHttp
                 .Expect(HttpMethod.Get, config.ApiBaseAddress + config.ContractReminderEndpoint.Endpoint)
                 .WithQueryString(queryParams)
@@ -89,6 +93,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var config = CreateContractsDataApiConfiguration(queryParams);
 
             var stringContent = new StringContent(string.Empty);
+
+            Mock.Get(_contractsLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             _mockHttp
                 .Expect(HttpMethod.Get, config.ApiBaseAddress + config.ContractReminderEndpoint.Endpoint)
@@ -123,6 +130,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var config = CreateContractsDataApiConfiguration(queryParams);
 
             var stringContent = new StringContent(string.Empty);
+
+            Mock.Get(_contractsLogger)
+                .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             _mockHttp
                 .Expect(HttpMethod.Get, config.ApiBaseAddress + config.ContractReminderEndpoint.Endpoint)
@@ -160,7 +170,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Verifiable();
 
             Mock.Get(_auditService)
-                .Setup(p => p.CreateAudit(It.IsAny<Audit>()))
+                .Setup(p => p.AuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -217,7 +227,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Verifiable();
 
             Mock.Get(_auditService)
-                .Setup(p => p.CreateAudit(It.IsAny<Audit>()))
+                .Setup(p => p.AuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
                 .Throws<InvalidOperationException>()
                 .Verifiable();
 
@@ -236,10 +246,10 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         public void QueueContractEmailReminderMessage_VerifyAuditEntry()
         {
             // Arrange
-            var expectedAudit = new Audit()
+            var expectedAudit = new Audit.Api.Client.Models.Audit()
             {
                 Severity = 0,
-                Action = ContractNotificationService.Audit_ActionType_ContractEmailReminderQueued,
+                Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
                 Ukprn = _contract.Ukprn,
                 Message = $"Email reminder has been queued for contract with Id [{_contract.Id}].",
                 User = ContractNotificationService.Audit_User_System
@@ -256,7 +266,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Verifiable();
 
             Mock.Get(_auditService)
-                .Setup(p => p.CreateAudit(expectedAudit))
+                .Setup(p => p.AuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -292,7 +302,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             Mock.Get(_auditService)
-                .Setup(p => p.CreateAudit(It.IsAny<Audit>()))
+                .Setup(p => p.AuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -352,7 +362,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             Mock.Get(_auditService)
-                .Setup(p => p.CreateAudit(It.IsAny<Audit>()))
+                .Setup(p => p.AuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
                 .Throws<InvalidOperationException>()
                 .Verifiable();
 

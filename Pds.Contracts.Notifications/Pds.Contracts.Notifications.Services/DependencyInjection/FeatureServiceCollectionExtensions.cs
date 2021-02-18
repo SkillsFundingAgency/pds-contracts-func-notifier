@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pds.Audit.Api.Client.Registrations;
 using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.HttpPolicyConfiguration;
 using Pds.Contracts.Notifications.Services.Implementations;
@@ -28,10 +29,8 @@ namespace Pds.Contracts.Notifications.Services.DependencyInjection
             var policyRegistry = services.AddPolicyRegistry();
             var policies = new PolicyType[] { PolicyType.Retry, PolicyType.CircuitBreaker };
 
-            // Configure Polly Policies for IAuditService HttpClient
-            services
-                .AddPolicies<IAuditService>(config, policyRegistry)
-                .AddHttpClient<IAuditService, AuditService, AuditApiConfiguration>(config, policies);
+            // Configure service for audit
+            services.AddAuditApiClient(config, policyRegistry);
 
             // Configure Polly Policies for IContractsApproverService HttpClient
             services
