@@ -1,6 +1,4 @@
-﻿using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Configuration;
@@ -12,7 +10,6 @@ using Pds.Core.ApiClient.Interfaces;
 using Pds.Core.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -75,7 +72,12 @@ namespace Pds.Contracts.Notifications.Services.Implementations
             _logger.LogInformation($"Queuing email reminder for contract [{contract.ContractNumber}].");
 
             var message = new ContractReminderMessage() { ContractId = contract.Id };
-            await _sbMessagingService.SendMessageAsync(message);
+            IDictionary<string, string> properties = new Dictionary<string, string>()
+            {
+                { "messageType", ContractReminderMessage.MessageProcessor_ContractReminderMessage }
+            };
+
+            await _sbMessagingService.SendAsBinaryXmlMessageAsync(message, properties);
 
             await _auditService.AuditAsync(
                 new Pds.Audit.Api.Client.Models.Audit

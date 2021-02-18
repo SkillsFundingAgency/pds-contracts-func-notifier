@@ -51,9 +51,6 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         private readonly Contract _contract
             = new Contract() { ContractNumber = "123", ContractVersion = 234, Id = 345, Ukprn = 456 };
 
-        private readonly ContractReminderMessage _contractReminderMessage
-            = new ContractReminderMessage { ContractId = 345 };
-
         #region GetContracts
 
         [TestMethod]
@@ -152,21 +149,27 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
 
         #endregion
 
-
         #region Queue Reminder Email Tests
 
         [TestMethod]
         public void QueueContractEmailReminderMessage_DoesNotThrowExceptions()
         {
             // Arrange
+            ContractReminderMessage actualReminder = null;
+            IDictionary<string, string> actualDictionary = null;
             var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
 
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendMessageAsync(_contractReminderMessage))
+                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
                 .Returns(Task.CompletedTask)
+                .Callback((ContractReminderMessage reminder, IDictionary<string, string> props) =>
+                {
+                    actualReminder = reminder;
+                    actualDictionary = props;
+                })
                 .Verifiable();
 
             Mock.Get(_auditService)
@@ -181,9 +184,10 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
 
             // Assert
             act.Should().NotThrow();
+            actualReminder.ContractId.Should().Be(_contract.Id);
+            actualDictionary["messageType"].Should().Be(ContractReminderMessage.MessageProcessor_ContractReminderMessage);
             VerifyAll();
         }
-
 
         [TestMethod]
         public void QueueContractEmailReminderMessage_FailureToQueue_AllowsExceptionToBubble()
@@ -195,7 +199,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendMessageAsync(_contractReminderMessage))
+                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
                 .Throws(new ServiceBusTimeoutException(TestServiceBusExceptionMessage))
                 .Verifiable();
 
@@ -222,7 +226,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendMessageAsync(_contractReminderMessage))
+                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -261,7 +265,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendMessageAsync(_contractReminderMessage))
+                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 

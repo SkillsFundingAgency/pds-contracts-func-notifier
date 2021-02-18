@@ -1,11 +1,11 @@
 ﻿using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.Interfaces;
-using System.Text;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace Pds.Contracts.Notifications.Services.Implementations
 {
@@ -25,17 +25,35 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         }
 
         /// <inheritdoc/>
-        public async Task SendMessageAsync<TObject>(TObject message)
+        public async Task SendAsBinaryXmlMessageAsync<TObject>(TObject message, IDictionary<string, string> properties)
         {
-            string strMessage = JsonConvert.SerializeObject(message);
-            byte[] byteMessage = Encoding.UTF8.GetBytes(strMessage);
-
-            Message msg = new Message(byteMessage)
+            var data = Serialise(message);
+            var msg = new Message(data)
             {
-                ContentType = "application/json"
+                ContentType = "application/xml"
             };
 
+            if (properties?.Count > 0)
+            {
+                foreach (var item in properties.Keys)
+                {
+                    msg.UserProperties.Add(item, properties[item]);
+                }
+            }
+
             await _messageSender.SendAsync(msg);
+        }
+
+        private byte[] Serialise<TObject>(TObject obj)
+        {
+            var serializer = new DataContractSerializer(typeof(TObject));
+            var stream = new MemoryStream();
+            using (var writer = XmlDictionaryWriter.CreateBinaryWriter(stream))
+            {
+                serializer.WriteObject(writer, obj);
+            }
+
+            return stream.ToArray();
         }
     }
 }
