@@ -1,10 +1,8 @@
 ﻿using FluentAssertions;
-using FluentAssertions.Primitives;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Moq.Protected;
 using Newtonsoft.Json;
 using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Configuration;
@@ -19,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Pds.Contracts.Notifications.Services.Tests.Unit
@@ -27,6 +24,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
     [TestClass, TestCategory("Unit")]
     public class ContractNotificationServiceTests
     {
+        #region Fields
+
         private const string TestBaseAddress = "http://test-api-endpoint";
 
         private const string TestContractGetEndpoint = "/test/get/contract";
@@ -50,6 +49,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
 
         private readonly Contract _contract
             = new Contract() { ContractNumber = "123", ContractVersion = 234, Id = 345, Ukprn = 456 };
+
+        #endregion Fields
+
 
         #region GetContracts
 
@@ -147,7 +149,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             Mock.Get(_contractsLogger).VerifyAll();
         }
 
-        #endregion
+        #endregion GetContracts
+
 
         #region Queue Reminder Email Tests
 
@@ -250,15 +253,6 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         public void QueueContractEmailReminderMessage_VerifyAuditEntry()
         {
             // Arrange
-            var expectedAudit = new Audit.Api.Client.Models.Audit()
-            {
-                Severity = 0,
-                Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
-                Ukprn = _contract.Ukprn,
-                Message = $"Email reminder has been queued for contract with Id [{_contract.Id}].",
-                User = ContractNotificationService.Audit_User_System
-            };
-
             var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
 
             Mock.Get(_contractsLogger)
@@ -284,7 +278,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             VerifyAll();
         }
 
-        #endregion
+        #endregion Queue Reminder Email Tests
 
 
         #region NotifyContractReminderSent Tests
@@ -380,123 +374,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             VerifyAll();
         }
 
-        #endregion
-
-
-        #region Http Patch Tests
-
-        [TestMethod]
-        public void HttpPatchWithAADAuth_Does_NotThrowException()
-        {
-            // Arrange
-            var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
-            var updateRequest = new ContractUpdateRequest()
-            {
-                ContractNumber = "123",
-                ContractVersion = 234
-            };
-            var updateRequestCollection = new List<ContractUpdateRequest>() { updateRequest };
-
-            _mockHttp
-                .Expect(TestBaseAddress + TestPatchEndpoint)
-                .WithHeaders("Authorization", "Bearer " + TestFakeAccessToken)
-                .Respond(HttpStatusCode.OK);
-
-            ContractNotificationService service = CreateContractNotificationService(config);
-
-            // Act
-            Func<Task> act = async () => await service.PatchWithAADAuth(TestPatchEndpoint, updateRequestCollection);
-
-            // Assert
-            act.Should().NotThrow();
-            VerifyAll();
-        }
-
-        [TestMethod]
-        public void HttpPatchWithAADAuth_OnError_ThrowsException()
-        {
-            // Arrange
-            var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
-            var updateRequest = new ContractUpdateRequest()
-            {
-                ContractNumber = "123",
-                ContractVersion = 234
-            };
-            var updateRequestCollection = new List<ContractUpdateRequest>() { updateRequest };
-
-            _mockHttp
-                .Expect(TestBaseAddress + TestPatchEndpoint)
-                .Respond(HttpStatusCode.InternalServerError, new StringContent("Error"));
-
-            Mock.Get(_contractsLogger)
-                .Setup(p => p.LogError(It.IsAny<ApiGeneralException>(), It.IsAny<string>(), It.IsAny<object[]>()));
-
-            ContractNotificationService service = CreateContractNotificationService(config);
-
-            // Act
-            Func<Task> act = async () => await service.PatchWithAADAuth(TestPatchEndpoint, updateRequestCollection);
-
-            // Assert
-            act.Should().Throw<ApiGeneralException>();
-            VerifyAll();
-        }
-
-        [TestMethod]
-        public void HttpPatch_DoesNot_ThrowException()
-        {
-            // Arrange
-            var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
-            var updateRequest = new ContractUpdateRequest()
-            {
-                ContractNumber = "123",
-                ContractVersion = 234
-            };
-            var updateRequestCollection = new List<ContractUpdateRequest>() { updateRequest };
-
-            _mockHttp
-                .Expect(TestBaseAddress + TestPatchEndpoint)
-                .Respond(HttpStatusCode.OK);
-
-            ContractNotificationService service = CreateContractNotificationService(config);
-
-            // Act
-            Func<Task> act = async () => await service.Patch(TestPatchEndpoint, updateRequestCollection);
-
-            // Assert
-            act.Should().NotThrow();
-            VerifyAll();
-        }
-
-        [TestMethod]
-        public void HttpPatch_OnError_ThrowsException()
-        {
-            // Arrange
-            var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
-            var updateRequest = new ContractUpdateRequest()
-            {
-                ContractNumber = "123",
-                ContractVersion = 234
-            };
-            var updateRequestCollection = new List<ContractUpdateRequest>() { updateRequest };
-
-            _mockHttp
-                .Expect(TestBaseAddress + TestPatchEndpoint)
-                .Respond(HttpStatusCode.InternalServerError, new StringContent("Error"));
-
-            Mock.Get(_contractsLogger)
-                .Setup(p => p.LogError(It.IsAny<ApiGeneralException>(), It.IsAny<string>(), It.IsAny<object[]>()));
-
-            ContractNotificationService service = CreateContractNotificationService(config);
-
-            // Act
-            Func<Task> act = async () => await service.Patch(TestPatchEndpoint, updateRequestCollection);
-
-            // Assert
-            act.Should().Throw<ApiGeneralException>();
-            VerifyAll();
-        }
-
-        #endregion
+        #endregion NotifyContractReminderSent Tests
 
 
         #region Setup Helpers
@@ -608,7 +486,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 }
             };
 
-        #endregion
+        #endregion Setup Helpers
+
 
         #region Verify Helpers
 
@@ -620,6 +499,6 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             Mock.Get(_sbMessagingService).VerifyAll();
         }
 
-        #endregion
+        #endregion Verify Helpers
     }
 }

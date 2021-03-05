@@ -10,12 +10,14 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.1" />
+    <PackageReference Include="AutoMapper" Version="10.1.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.11" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="3.1.11" />
-    <PackageReference Include="Pds.Audit.Api.Client" Version="1.0.2" />
-    <PackageReference Include="Pds.Core.ApiClient" Version="3.4.1" />
+    <PackageReference Include="Pds.Audit.Api.Client" Version="1.1.0" />
+    <PackageReference Include="Pds.Core.ApiClient" Version="4.0.0" />
     <PackageReference Include="Pds.Core.CodeAnalysis.StyleCop" Version="2.0.0" />
     <PackageReference Include="Pds.Core.Logging" Version="2.0.3" />
     <PackageReference Include="Pds.Core.Telemetry.ApplicationInsights" Version="2.0.2" />

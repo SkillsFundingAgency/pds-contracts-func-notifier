@@ -29,9 +29,6 @@ namespace Pds.Contracts.Notifications.Services.DependencyInjection
             var policyRegistry = services.AddPolicyRegistry();
             var policies = new PolicyType[] { PolicyType.Retry, PolicyType.CircuitBreaker };
 
-            // Configure service for audit
-            services.AddAuditApiClient(config, policyRegistry);
-
             // Configure Polly Policies for IContractsApproverService HttpClient
             services
                 .AddPolicies<IContractNotificationService>(config, policyRegistry)
@@ -39,14 +36,19 @@ namespace Pds.Contracts.Notifications.Services.DependencyInjection
 
             services.AddAzureServiceBusSender(config);
 
+            // Configure service for audit
+            services.AddAuditApiClient(config, policyRegistry);
+
             // Need to allow resue of Azure AAD auth tokens
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+            services.AddTransient(typeof(IAuthenticationService<>), typeof(AuthenticationService<>));
 
             services.AddScoped(typeof(IContractReminderProcessingService), typeof(ContractReminderProcessingService));
-
             services.AddScoped(typeof(IServiceBusMessagingService), typeof(ServiceBusMessagingService));
 
-            services.AddTransient(typeof(IAuthenticationService<>), typeof(AuthenticationService<>));
+            services.AddScoped<IContractStatusChangePublisher, ContractStatusChangePublisher>();
+
+            services.AddAutoMapper(typeof(FeatureServiceCollectionExtensions).Assembly);
 
             return services;
         }

@@ -72,11 +72,11 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                         _logger.LogError(e, "Error processign one or more records.");
                     }
 
-                    if (tasks.All(p => p.IsCompletedSuccessfully == false))
+                    if (tasks.All(p => !p.IsCompletedSuccessfully))
                     {
                         _logger.LogCritical("All processes failed to complete successfully.  Aborting...");
                         _logger.LogInformation($"Contract reminders processes aborted.  Sent {remindersSent} reminders prior to abort.");
-                        throw new ContractProcessingException("All processes failed to complete successfully.", tasks.First(p => p.IsCompletedSuccessfully == false).Exception);
+                        throw new ContractProcessingException("All processes failed to complete successfully.", tasks.First(p => !p.IsCompletedSuccessfully).Exception);
                     }
                     else
                     {

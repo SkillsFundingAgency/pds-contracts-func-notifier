@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Pds.Contracts.Notifications.Services.Models
+﻿namespace Pds.Contracts.Notifications.Services.Models
 {
     /// <summary>
     /// Contract object.
@@ -28,5 +24,10 @@ namespace Pds.Contracts.Notifications.Services.Models
         /// Gets or sets the contract version.
         /// </summary>
         public int ContractVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets status.
+        /// </summary>
+        public ContractStatus Status { get; set; }
     }
 }
