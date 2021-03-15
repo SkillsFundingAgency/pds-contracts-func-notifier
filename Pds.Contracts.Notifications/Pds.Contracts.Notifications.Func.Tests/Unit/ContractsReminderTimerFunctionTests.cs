@@ -1,0 +1,35 @@
+﻿using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Pds.Contracts.Notifications.Services.Interfaces;
+using System;
+using System.Threading.Tasks;
+
+namespace Pds.Contracts.Notifications.Func.Tests.Unit
+{
+    [TestClass, TestCategory("Unit")]
+    public class ContractsReminderTimerFunctionTests
+    {
+        [TestMethod]
+        public void Run_DoesNotThrowException()
+        {
+            // Arrange
+            var mockService = new Mock<IContractReminderProcessingService>(MockBehavior.Strict);
+
+            mockService
+                .Setup(e => e.IssueContractReminders())
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var function = new ContractsReminderTimerFunction(mockService.Object);
+
+            // Act
+            Func<Task> act = async () => { await function.Run(null, null); };
+
+            // Assert
+            act.Should().NotThrow();
+            mockService.Verify();
+        }
+    }
+}
