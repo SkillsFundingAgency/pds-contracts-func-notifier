@@ -106,10 +106,6 @@
       "type": "string",
       "defaultValue": "/api/contractReminder"
     },
-    "AuditApiCreateAuditEntryEndpoint": {
-      "type": "string",
-      "defaultValue": "/api/audit"
-    },
     "HttpPolicyRetryCount": {
       "type": "string",
       "defaultValue": "3"
@@ -133,7 +129,6 @@
     "functionAppName": "[concat(variables('resourceNamePrefix'), 'wkr-fa')]",
     "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
     "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
-    "contractNotifierSubscriptionName": "[concat('contract-notifier-subscription-', parameters('resourceEnvironmentName'))]",
     "contractReadyToSignSubscriptionName": "[concat('contract-readytosign-subscription-', parameters('resourceEnvironmentName'))]",
     "contractApprovedSubscriptionName": "[concat('contract-approved-subscription-', parameters('resourceEnvironmentName'))]",
     "contractReadyToReviewSubscriptionName": "[concat('contract-readytoreview-subscription-', parameters('resourceEnvironmentName'))]",
@@ -202,33 +197,6 @@
           }
         }
       }
-    },
-    {
-      "apiVersion": "2017-05-10",
-      "name": "contract-notifier-service-bus-subscription",
-      "type": "Microsoft.Resources/deployments",
-      "resourceGroup": "[parameters('sharedResourceGroupName')]",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "serviceBusNamespaceName": {
-            "value": "[parameters('sharedServiceBusName')]"
-          },
-          "serviceBusTopicName": {
-            "value": "[variables('contractNotificationTopicName')]"
-          },
-          "serviceBusTopicSubscriptionName": {
-            "value": "[variables('contractNotifierSubscriptionName')]"
-          }
-        }
-      },
-      "dependsOn": [
-        "contract-notifier-service-bus-topic"
-      ]
     },
     {
       "apiVersion": "2017-05-10",
@@ -409,10 +377,6 @@
                 "value": "[variables('contractNotificationTopicName')]"
               },
               {
-                "name": "Pds.Contracts.Notifier.Subscription",
-                "value": "[variables('contractNotifierSubscriptionName')]"
-              },
-              {
                 "name": "ContractsDataApiConfiguration:ApiBaseAddress",
                 "value": "[parameters('ContractApiBaseAddress')]"
               },
@@ -479,10 +443,6 @@
               {
                 "name": "AuditApiConfiguration:AppUri",
                 "value": "[parameters('AuditApiAppUri')]"
-              },
-              {
-                "name": "AuditApiConfiguration:CreateAuditEntryEndpoint:Endpoint",
-                "value": "[parameters('AuditApiCreateAuditEntryEndpoint')]"
               },
               {
                 "name": "HttpPolicyOptions:HttpRetryCount",
