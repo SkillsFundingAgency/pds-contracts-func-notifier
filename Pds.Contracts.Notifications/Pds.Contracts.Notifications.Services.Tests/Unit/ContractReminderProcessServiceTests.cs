@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Implementations;
 using Pds.Contracts.Notifications.Services.Interfaces;
 using Pds.Contracts.Notifications.Services.Models;
@@ -21,6 +22,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         private readonly ILoggerAdapter<ContractReminderProcessingService> _loggerAdapter
             = Mock.Of<ILoggerAdapter<ContractReminderProcessingService>>(MockBehavior.Strict);
 
+        private readonly IAuditService _auditService
+            = Mock.Of<IAuditService>(MockBehavior.Strict);
+
         [TestMethod]
         public void IssueContactReminders_HandlesNullResult()
         {
@@ -31,6 +35,11 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             SetupContractReminderServiceGetContracts(result, null);
 
             SetupLoggerInformation();
+
+            Mock.Get(_auditService)
+                .Setup(p => p.TrySendAuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
 
             // Act
             Func<Task> act = async () => await service.IssueContractReminders();
@@ -63,6 +72,11 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
+            Mock.Get(_auditService)
+                .Setup(p => p.TrySendAuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
             // Act
             Func<Task> act = async () => await service.IssueContractReminders();
 
@@ -75,7 +89,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         public void IssueContactReminders_OnOneRecordProcessingFailure_LogsErrors_And_Continues()
         {
             // Arrange
-            var service = new ContractReminderProcessingService(_contractNotificationService, _loggerAdapter);
+            var service = new ContractReminderProcessingService(_contractNotificationService, _loggerAdapter, _auditService);
 
             var result = GetContracts();
             var emptyResult = new ContractReminders();
@@ -92,6 +106,11 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
 
             Mock.Get(_contractNotificationService)
                 .Setup(p => p.NotifyContractReminderSent(It.IsIn<Contract>(result.Contracts)))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            Mock.Get(_auditService)
+                .Setup(p => p.TrySendAuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -126,6 +145,11 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Throws<InvalidOperationException>()
                 .Verifiable();
 
+            Mock.Get(_auditService)
+                .Setup(p => p.TrySendAuditAsync(It.IsAny<Audit.Api.Client.Models.Audit>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
             // Act
             Func<Task> act = async () => await service.IssueContractReminders();
 
@@ -138,7 +162,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         #region Setup Helpers
 
         private ContractReminderProcessingService CreateContractReminderService()
-            => new ContractReminderProcessingService(_contractNotificationService, _loggerAdapter);
+            => new ContractReminderProcessingService(_contractNotificationService, _loggerAdapter, _auditService);
 
         private void SetupLoggerError<TException>()
             where TException : Exception

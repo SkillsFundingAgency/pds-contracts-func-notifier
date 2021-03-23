@@ -24,7 +24,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         /// <summary>
         /// The audit user.
         /// </summary>
-        public const string Audit_User_System = "System";
+        public const string Audit_User_System = "System-Notifier";
 
         private readonly ILoggerAdapter<ContractNotificationService> _logger;
 

@@ -1,4 +1,5 @@
-﻿using Pds.Contracts.Notifications.Services.Interfaces;
+﻿using Pds.Audit.Api.Client.Interfaces;
+using Pds.Contracts.Notifications.Services.Interfaces;
 using Pds.Contracts.Notifications.Services.Models;
 using Pds.Core.Logging;
 using System;
@@ -6,30 +7,50 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 namespace Pds.Contracts.Notifications.Services.Implementations
 {
     /// <inheritdoc/>
     public class ContractReminderProcessingService : IContractReminderProcessingService
     {
+        /// <summary>
+        /// The audit user.
+        /// </summary>
+        public const string Audit_User_System = "System-Notifier";
+
         private readonly IContractNotificationService _contractNotificationService;
         private readonly ILoggerAdapter<ContractReminderProcessingService> _logger;
+        private readonly IAuditService _auditService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractReminderProcessingService"/> class.
         /// </summary>
         /// <param name="contractNotificationService">Contract notification service to use to access contracts data.</param>
         /// <param name="logger">ILogger reference to log output.</param>
+        /// <param name="auditService">The audit service.</param>
         public ContractReminderProcessingService(
             IContractNotificationService contractNotificationService,
-            ILoggerAdapter<ContractReminderProcessingService> logger)
+            ILoggerAdapter<ContractReminderProcessingService> logger,
+            IAuditService auditService)
         {
             _contractNotificationService = contractNotificationService;
             _logger = logger;
+            _auditService = auditService;
         }
 
         /// <inheritdoc/>
         public async Task IssueContractReminders()
         {
+            await _auditService.TrySendAuditAsync(
+               new Audit.Api.Client.Models.Audit
+               {
+                   Severity = 0,
+                   Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
+                   Ukprn = null,
+                   Message = $"Contract Reminder function has been triggered.",
+                   User = Audit_User_System
+               });
+
             ContractReminders reminders = null;
             int remindersSent = 0;
             do
@@ -85,8 +106,18 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                 }
             }
             while (reminders?.Contracts?.Count > 0);
-
-            _logger.LogInformation($"Contract reminders process completed.  Sent {remindersSent} reminders.");
+            {
+                await _auditService.TrySendAuditAsync(
+                   new Audit.Api.Client.Models.Audit
+                   {
+                       Severity = 0,
+                       Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
+                       Ukprn = null,
+                       Message = $"Contract Reminder function has completed. {reminders} contract email reminder(s) processed.",
+                       User = Audit_User_System
+                   });
+                _logger.LogInformation($"Contract reminders process completed. Sent {remindersSent} reminders.");
+            }
         }
     }
 }
