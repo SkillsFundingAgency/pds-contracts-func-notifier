@@ -113,7 +113,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                        Severity = 0,
                        Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
                        Ukprn = null,
-                       Message = $"Contract Reminder function has completed. {reminders} contract email reminder(s) processed.",
+                       Message = $"Contract Reminder function has completed. {remindersSent} contract email reminder(s) processed.",
                        User = Audit_User_System
                    });
                 _logger.LogInformation($"Contract reminders process completed. Sent {remindersSent} reminders.");
