@@ -19,12 +19,12 @@ namespace Pds.Contracts.Notifications.Services.Implementations
     /// <summary>
     /// Contract reminder service.
     /// </summary>
-    public class ContractNotificationService : BaseApiClient<ContractsDataApiConfiguration>, IContractNotificationService, IHttpApiClientPatch
+    public class ContractNotificationService : BaseApiClient<ContractsDataApiConfiguration>, IContractNotificationService
     {
         /// <summary>
         /// The audit user.
         /// </summary>
-        public const string Audit_User_System = "System";
+        public const string Audit_User_System = "System-Notifier";
 
         private readonly ILoggerAdapter<ContractNotificationService> _logger;
 
@@ -63,7 +63,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         {
             string querystring = CreateQueryString(_dataApiConfiguration.ContractReminderEndpoint);
             _logger.LogInformation($"Requesting a list of contracts with overdue reminders with querystring {querystring}.");
-            return await GetWithAADAuth<ContractReminders>(querystring);
+            return await Get<ContractReminders>(querystring);
         }
 
         /// <inheritdoc/>
@@ -91,25 +91,25 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         }
 
         /// <inheritdoc/>
-        public async Task NotifyContractReminderSent(Contract contract)
+        public async Task NotifyContractReminderSent(Contract contractChange)
         {
             var updateRequest = new ContractUpdateRequest
             {
-                Id = contract.Id,
-                ContractNumber = contract.ContractNumber,
-                ContractVersion = contract.ContractVersion
+                Id = contractChange.Id,
+                ContractNumber = contractChange.ContractNumber,
+                ContractVersion = contractChange.ContractVersion
             };
 
-            _logger.LogInformation($"Updating the last reminder date on contract with id [{contract.ContractNumber}].");
-            await PatchWithAADAuth(_dataApiConfiguration.ContractReminderPatchEndpoint.Endpoint, updateRequest);
+            _logger.LogInformation($"Updating the last reminder date on contract with id [{contractChange.ContractNumber}].");
+            await Patch(_dataApiConfiguration.ContractReminderPatchEndpoint.Endpoint, updateRequest);
 
             await _auditService.AuditAsync(
                 new Pds.Audit.Api.Client.Models.Audit
                 {
                     Severity = 0,
                     Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
-                    Ukprn = contract.Ukprn,
-                    Message = $"Updated 'Last email reminder sent date' for contract with Id {contract.Id}",
+                    Ukprn = contractChange.Ukprn,
+                    Message = $"Updated 'Last email reminder sent date' for contract with Id {contractChange.Id}",
                     User = Audit_User_System
                 });
         }
@@ -121,65 +121,6 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                 _logger.LogError(exception, exception.Message);
                 throw exception;
             };
-
-        #region HTTP PATCH
-
-        /// <summary>
-        /// Performs a HTTP PATCH request to given URI, with the payload of type <typeparamref name="TRequest"/>.
-        /// </summary>
-        /// <typeparam name="TRequest">The payload type of this request.</typeparam>
-        /// <param name="requestUri">The request URI to call.</param>
-        /// <param name="requestBody">The payload of this request.</param>
-        /// <param name="setAccessTokenAction">The delegate to set the access token.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        public async Task Patch<TRequest>(string requestUri, TRequest requestBody, Func<Task> setAccessTokenAction = null)
-        {
-            ApiGeneralException apiException;
-
-            try
-            {
-                var json = JsonConvert.SerializeObject(requestBody);
-
-                using (var stringContent = new StringContent(json, Encoding.UTF8, "application/json"))
-                {
-                    if (setAccessTokenAction != null)
-                    {
-                        await setAccessTokenAction();
-                    }
-
-                    var response = await HttpClient.PatchAsync(requestUri, stringContent);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return;
-                    }
-
-                    var responseContent = await response?.Content?.ReadAsStringAsync();
-                    apiException = new ApiGeneralException(response.StatusCode, responseContent);
-                }
-            }
-            catch (Exception caughtException)
-            {
-                apiException = new ApiGeneralException(caughtException);
-            }
-
-            FailureAction(apiException);
-        }
-
-        /// <summary>
-        /// Performs an authenticated HTTP PATCH request to the given URI, with a payload of type <typeparamref name="TRequest"></typeparamref>.
-        /// </summary>
-        /// <typeparam name="TRequest">The payload type of this request.</typeparam>
-        /// <param name="requestUri">The request URI to call.</param>
-        /// <param name="requestBody">The payload of this request.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        public async Task PatchWithAADAuth<TRequest>(string requestUri, TRequest requestBody)
-        {
-            await Patch<TRequest>(requestUri, requestBody, async () => await SetAADAccessTokenHeader());
-        }
-
-        #endregion
-
 
         #region Helper Functions
 

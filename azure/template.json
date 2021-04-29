@@ -31,6 +31,10 @@
     "sharedServiceBusName": {
       "type": "string"
     },
+    "serviceBusAccessKeyName": {
+      "type": "string",
+      "defaultValue": "pds-contracts-domain"
+    },
     "sharedStorageAccountName": {
       "type": "string"
     },
@@ -102,10 +106,6 @@
       "type": "string",
       "defaultValue": "/api/contractReminder"
     },
-    "AuditApiCreateAuditEntryEndpoint": {
-      "type": "string",
-      "defaultValue": "/api/audit"
-    },
     "HttpPolicyRetryCount": {
       "type": "string",
       "defaultValue": "3"
@@ -129,7 +129,10 @@
     "functionAppName": "[concat(variables('resourceNamePrefix'), 'wkr-fa')]",
     "appServicePlanName": "[concat(variables('resourceNamePrefix'), 'wkr-asp')]",
     "contractNotificationTopicName": "[concat('contract-notification-topic-', parameters('resourceEnvironmentName'))]",
-    "contractNotifierSubscriptionName": "[concat('contract-notifier-subscription-', parameters('resourceEnvironmentName'))]",
+    "contractReadyToSignSubscriptionName": "[concat('contract-readytosign-subscription-', parameters('resourceEnvironmentName'))]",
+    "contractApprovedSubscriptionName": "[concat('contract-approved-subscription-', parameters('resourceEnvironmentName'))]",
+    "contractReadyToReviewSubscriptionName": "[concat('contract-readytoreview-subscription-', parameters('resourceEnvironmentName'))]",
+    "contractWithdrawnSubscriptionName": "[concat('contract-withdrawn-subscription-', parameters('resourceEnvironmentName'))]",
     "emailQueueName": "[concat('contractsqueue-', parameters('resourceEnvironmentName'))]",
     "EnvironmentToEnableAlertsUpon": ["demo", "oat", "release"],
     "EnableAlertsAndMetrics": "[contains(variables('EnvironmentToEnableAlertsUpon'), toLower(parameters('resourceEnvironmentName')))]",
@@ -197,7 +200,7 @@
     },
     {
       "apiVersion": "2017-05-10",
-      "name": "contract-notifier-service-bus-subscription",
+      "name": "contract-readytosign-sb-subscription",
       "type": "Microsoft.Resources/deployments",
       "resourceGroup": "[parameters('sharedResourceGroupName')]",
       "properties": {
@@ -214,7 +217,100 @@
             "value": "[variables('contractNotificationTopicName')]"
           },
           "serviceBusTopicSubscriptionName": {
-            "value": "[variables('contractNotifierSubscriptionName')]"
+            "value": "[variables('contractReadyToSignSubscriptionName')]"
+          },
+          "subscriptionSqlFilter": {
+            "value": "Status='ReadyToSign'"
+          }
+        }
+      },
+      "dependsOn": [
+        "contract-notifier-service-bus-topic"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "contract-approved-sb-subscription",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          },
+          "serviceBusTopicSubscriptionName": {
+            "value": "[variables('contractApprovedSubscriptionName')]"
+          },
+          "subscriptionSqlFilter": {
+            "value": "Status='Approved'"
+          }
+        }
+      },
+      "dependsOn": [
+        "contract-notifier-service-bus-topic"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "contract-readytoreview-sb-subscription",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          },
+          "serviceBusTopicSubscriptionName": {
+            "value": "[variables('contractReadyToReviewSubscriptionName')]"
+          },
+          "subscriptionSqlFilter": {
+            "value": "Status='ReadyToReview'"
+          }
+        }
+      },
+      "dependsOn": [
+        "contract-notifier-service-bus-topic"
+      ]
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "contract-withdrawn-sb-subscription",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('sharedResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('deploymentUrlBase'),'service-bus-topic-subscription.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusNamespaceName": {
+            "value": "[parameters('sharedServiceBusName')]"
+          },
+          "serviceBusTopicName": {
+            "value": "[variables('contractNotificationTopicName')]"
+          },
+          "serviceBusTopicSubscriptionName": {
+            "value": "[variables('contractWithdrawnSubscriptionName')]"
+          },
+          "subscriptionSqlFilter": {
+            "value": "Status='Withdrawn'"
           }
         }
       },
@@ -279,10 +375,6 @@
               {
                 "name": "Pds.Contracts.Notifications.Topic",
                 "value": "[variables('contractNotificationTopicName')]"
-              },
-              {
-                "name": "Pds.Contracts.Notifier.Subscription",
-                "value": "[variables('contractNotifierSubscriptionName')]"
               },
               {
                 "name": "ContractsDataApiConfiguration:ApiBaseAddress",
@@ -353,10 +445,6 @@
                 "value": "[parameters('AuditApiAppUri')]"
               },
               {
-                "name": "AuditApiConfiguration:CreateAuditEntryEndpoint:Endpoint",
-                "value": "[parameters('AuditApiCreateAuditEntryEndpoint')]"
-              },
-              {
                 "name": "HttpPolicyOptions:HttpRetryCount",
                 "value": "[parameters('HttpPolicyRetryCount')]"
               },
@@ -379,6 +467,26 @@
               {
                 "name": "MonolithServiceBusConfiguration:QueueName",
                 "value": "[variables('emailQueueName')]"
+              },
+              {
+                "name": "NotifierServiceBusConnectionString",
+                "value": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]"
+              },
+              {
+                "name": "Pds.Contracts.ReadyToSign.Subscription",
+                "value": "[variables('contractReadyToSignSubscriptionName')]"
+              },
+              {
+                "name": "Pds.Contracts.Approved.Subscription",
+                "value": "[variables('contractApprovedSubscriptionName')]"
+              },
+              {
+                "name": "Pds.Contracts.ReadyToReview.Subscription",
+                "value": "[variables('contractReadyToReviewSubscriptionName')]"
+              },
+              {
+                "name": "Pds.Contracts.Withdrawn.Subscription",
+                "value": "[variables('contractWithdrawnSubscriptionName')]"
               }
               
             ]
