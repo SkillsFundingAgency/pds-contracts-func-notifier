@@ -6,12 +6,12 @@ Contracts notification function is a serverless azure function that handles sign
 
 ### Getting Started
 
-This product is a Visual Studio 2019 solution containing several projects (Azure function application, service, and repository layers, with associated unit test and integration test projects).
+This product is a Visual Studio 2022 solution containing several projects (Azure function application, service, and repository layers, with associated unit test and integration test projects).
 To run this product locally, you will need to configure the list of dependencies, once configured and the configuration files updated, it should be F5 to run and debug locally.
 
 ### Installing
 
-Clone the project and open the solution in Visual Studio 2019.
+Clone the project and open the solution in Visual Studio 2022.
 
 #### List of dependencies
 
@@ -69,24 +69,25 @@ The following is a sample configuration file
     "ApiBaseAddress": "replace_local_contract_api_or_stub",
     "ShouldSkipAuthentication": "true",
     "ContractReminderEndpoint": {
-      "Endpoint": "/api/contractReminders",
       "QueryParameters": {
         "reminderInterval": "14",
         "page": "1",
         "count": "25"
       }
-    },
-    "ContractReminderPatchEndpoint": {
-      "Endpoint": "/api/contractReminder"
     }
+  },
+  "FundingClaimsDataApiConfiguration": {
+    "ApiBaseAddress": "replace_local_contract_api_or_stub",
+    "ShouldSkipAuthentication": "true"
+  },
+  "SubcontractorDeclarationDataApiConfiguration": {
+    "ApiBaseAddress": "replace_local_contract_api_or_stub",
+    "ShouldSkipAuthentication": "true"
   },
 
   "AuditApiConfiguration": {
     "ApiBaseAddress": "replace_local_audit_api_or_stub",
-    "ShouldSkipAuthentication": "true",
-    "CreateAuditEntryEndpoint": {
-      "Endpoint": "/api/audit"
-    }
+    "ShouldSkipAuthentication": "true"
   },
 
   "HttpPolicyOptions": {
@@ -97,11 +98,6 @@ The following is a sample configuration file
   },
 
 
-  "MonolithServiceBusConfiguration": {
-    "ConnectionString": "replace_ServiceBusConnectionString",
-    "QueueName": "replace_QueueName"
-  },
-
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
@@ -111,7 +107,9 @@ The following is a sample configuration file
     "Pds.Contracts.ReadyToSign.Subscription": "replace_contracts_readytosign_subscription",
     "Pds.Contracts.Approved.Subscription": "replace_contracts_approved_subscription",
     "Pds.Contracts.ReadyToReview.Subscription": "replace_contracts_readytoreview_subscription",
-    "Pds.Contracts.Withdrawn.Subscription": "replace_contracts_withdrawn_subscription"
+    "Pds.Contracts.Withdrawn.Subscription": "replace_contracts_withdrawn_subscription",
+    "CdsUserExceptionEmail": "replace_cdsUserExceptionEmail",
+    "ServiceNowEmailAddress": "replace_ServiceNowEmailAddress"
   }
 }
 ```
@@ -120,24 +118,26 @@ The following configurations need to be replaced with your values.
 |Key|Token|Example|
 |-|-|-|
 |ContractsDataApiConfiguration.ApiBaseAddress|replace_local_contract_api_or_stub|<http://localhost:5001>|
+|SubcontractorDeclarationDataApiConfiguration.ApiBaseAddress|replace_local_contract_api_or_stub|<http://localhost:5001>|
+|FundingClaimDataApiConfiguration.ApiBaseAddress|replace_local_fundingclaim_api_or_stub|
 |AuditApiConfiguration.ApiBaseAddress|replace_local_audit_api_or_stub|<http://localhost:5002/>|
-|MonolithServiceBusConfiguration.ConnectionString|replace_ServiceBusConnectionString|A valid azure service bus connection string|
-|MonolithServiceBusConfiguration.QueueName|replace_QueueName|notification-queue|
 |NotifierServiceBusConnectionString|replace_ServiceBusConnectionString|A valid azure service bus connection string|
 |Pds.Contracts.Notifications.Topic|replace_contracts_notification_topic|notification-topic|
 |Pds.Contracts.ReadyToSign.Subscription|replace_contracts_readytosign_subscription|readytosign-subscription|
 |Pds.Contracts.Approved.Subscription|replace_contracts_approved_subscription|approved-subscription|
 |Pds.Contracts.ReadyToReview.Subscription|replace_contracts_readytoreview_subscription|readytoreview-subscription|
 |Pds.Contracts.Withdrawn.Subscription|replace_contracts_withdrawn_subscription|withdrawn-subscription|
+|CdsUserExceptionEmail|replace_CdsUserExceptionEmail|
+|ServiceNowEmailAddress|replace_ServiceNowEmailAddress|
 
 ## Build and Test
 
 This API is built using
 
-* Microsoft Visual Studio 2019
-* .Net Core 3.1
+* Microsoft Visual Studio 2022
+* .Net Core 6.0
 
-To build and test locally, you can either use visual studio 2019 or VSCode or simply use dotnet CLI `dotnet build` and `dotnet test` more information in dotnet CLI can be found at <https://docs.microsoft.com/en-us/dotnet/core/tools/>.
+To build and test locally, you can either use visual studio 2022 or VSCode or simply use dotnet CLI `dotnet build` and `dotnet test` more information in dotnet CLI can be found at <https://docs.microsoft.com/en-us/dotnet/core/tools/>.
 
 ## Contribute
 

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.Interfaces;
@@ -7,11 +6,11 @@ using Pds.Contracts.Notifications.Services.Models;
 using Pds.Core.ApiClient;
 using Pds.Core.ApiClient.Exceptions;
 using Pds.Core.ApiClient.Interfaces;
+using Pds.Core.AzureServiceBusMessaging.Interfaces;
 using Pds.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Pds.Contracts.Notifications.Services.Implementations
@@ -32,7 +31,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
 
         private readonly ContractsDataApiConfiguration _dataApiConfiguration;
 
-        private readonly IServiceBusMessagingService _sbMessagingService;
+        private readonly IAzureServiceBusMessagingService _azureServiceBusMessagingService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractNotificationService"/> class.
@@ -40,20 +39,20 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         /// <param name="authenticationService">The authentication service.</param>
         /// <param name="httpClient">The HTTP client.</param>
         /// <param name="configurationOptions">The configuration options.</param>
-        /// <param name="serviceBusMessagingService">The messaging service to use for queuing reminders.</param>
+        /// <param name="azureServiceBusMessagingService">The messaging service to use for queuing reminders.</param>
         /// <param name="logger">ILogger reference to log output.</param>
         /// <param name="auditService">The audit service.</param>
         public ContractNotificationService(
             IAuthenticationService<ContractsDataApiConfiguration> authenticationService,
             HttpClient httpClient,
             IOptions<ContractsDataApiConfiguration> configurationOptions,
-            IServiceBusMessagingService serviceBusMessagingService,
+            IAzureServiceBusMessagingService azureServiceBusMessagingService,
             ILoggerAdapter<ContractNotificationService> logger,
             IAuditService auditService)
             : base(authenticationService, httpClient, Options.Create(configurationOptions.Value))
         {
             _logger = logger;
-            _sbMessagingService = serviceBusMessagingService;
+            _azureServiceBusMessagingService = azureServiceBusMessagingService;
             _auditService = auditService;
             _dataApiConfiguration = configurationOptions.Value;
         }
@@ -61,7 +60,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         /// <inheritdoc/>
         public async Task<ContractReminders> GetOverdueContracts()
         {
-            string querystring = CreateQueryString(_dataApiConfiguration.ContractReminderEndpoint);
+            string querystring = CreateQueryString(_dataApiConfiguration.ContractReminderQuerystring);
             _logger.LogInformation($"Requesting a list of contracts with overdue reminders with querystring {querystring}.");
             return await Get<ContractReminders>(querystring);
         }
@@ -72,12 +71,8 @@ namespace Pds.Contracts.Notifications.Services.Implementations
             _logger.LogInformation($"Queuing email reminder for contract [{contract.ContractNumber}].");
 
             var message = new ContractReminderMessage() { ContractId = contract.Id };
-            IDictionary<string, string> properties = new Dictionary<string, string>()
-            {
-                { "messageType", ContractReminderMessage.MessageProcessor_ContractReminderMessage }
-            };
 
-            await _sbMessagingService.SendAsBinaryXmlMessageAsync(message, properties);
+            await _azureServiceBusMessagingService.SendMessageAsync(Constants.ContractReminderEmailQueue, message);
 
             await _auditService.AuditAsync(
                 new Pds.Audit.Api.Client.Models.Audit
@@ -85,7 +80,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                     Severity = 0,
                     Action = Audit.Api.Client.Enumerations.ActionType.ContractEmailReminderQueued,
                     Ukprn = contract.Ukprn,
-                    Message = $"Email reminder has been queued for contract with Id [{contract.Id}].",
+                    Message = $"ContractReminderMessage has been queued for contract with Id [{contract.Id}].",
                     User = Audit_User_System
                 });
         }
@@ -101,7 +96,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
             };
 
             _logger.LogInformation($"Updating the last reminder date on contract with id [{contractChange.ContractNumber}].");
-            await Patch(_dataApiConfiguration.ContractReminderPatchEndpoint.Endpoint, updateRequest);
+            await Patch(Constants.ContractReminderPatchEndpoint, updateRequest);
 
             await _auditService.AuditAsync(
                 new Pds.Audit.Api.Client.Models.Audit
@@ -126,7 +121,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
 
         private static string CreateQueryString(QuerystringEndpointConfiguration endpointConfiguration)
         {
-            string querystring = $"{endpointConfiguration.Endpoint}?";
+            string querystring = $"{Constants.ContractReminderEndpoint}?";
             IList<string> query = new List<string>();
 
             foreach (var item in endpointConfiguration.QueryParameters.Keys)

@@ -1,5 +1,5 @@
-﻿using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -7,10 +7,10 @@ using Newtonsoft.Json;
 using Pds.Audit.Api.Client.Interfaces;
 using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.Implementations;
-using Pds.Contracts.Notifications.Services.Interfaces;
 using Pds.Contracts.Notifications.Services.Models;
 using Pds.Core.ApiClient.Exceptions;
 using Pds.Core.ApiClient.Interfaces;
+using Pds.Core.AzureServiceBusMessaging.Interfaces;
 using Pds.Core.Logging;
 using RichardSzalay.MockHttp;
 using System;
@@ -27,11 +27,6 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         #region Fields
 
         private const string TestBaseAddress = "http://test-api-endpoint";
-
-        private const string TestContractGetEndpoint = "/test/get/contract";
-        private const string TestContractPatchEndpoint = "/test/patch/contract";
-        private const string TestPatchEndpoint = "/test/patch/operation";
-
         private const string TestFakeAccessToken = "AccessToken";
         private const string TestServiceBusExceptionMessage = "Test Exception Error";
 
@@ -44,8 +39,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         private readonly IAuditService _auditService
             = Mock.Of<IAuditService>(MockBehavior.Strict);
 
-        private readonly IServiceBusMessagingService _sbMessagingService
-            = Mock.Of<IServiceBusMessagingService>(MockBehavior.Strict);
+        private readonly IAzureServiceBusMessagingService _azureServiceBusMessagingService
+            = Mock.Of<IAzureServiceBusMessagingService>(MockBehavior.Strict);
 
         private readonly Contract _contract
             = new Contract() { ContractNumber = "123", ContractVersion = 234, Id = 345, Ukprn = 456 };
@@ -63,13 +58,13 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var config = CreateContractsDataApiConfiguration(queryParams);
 
             var contracts = CreateContractReminders();
-            var stringContent = new StringContent(JsonConvert.SerializeObject(contracts));
+            var stringContent = new StringContent(JsonConvert.SerializeObject(contracts), System.Text.Encoding.UTF8, "application/json");
 
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             _mockHttp
-                .Expect(HttpMethod.Get, config.ApiBaseAddress + config.ContractReminderEndpoint.Endpoint)
+                .Expect(HttpMethod.Get, config.ApiBaseAddress + Constants.ContractReminderEndpoint)
                 .WithQueryString(queryParams)
                 .Respond(HttpStatusCode.OK, stringContent);
 
@@ -97,7 +92,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             _mockHttp
-                .Expect(HttpMethod.Get, config.ApiBaseAddress + config.ContractReminderEndpoint.Endpoint)
+                .Expect(HttpMethod.Get, config.ApiBaseAddress + Constants.ContractReminderEndpoint)
                 .WithQueryString(queryParams)
                 .Respond(expectedStatusCode, stringContent);
 
@@ -128,13 +123,13 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var queryParams = CreateQueryParameters(numOfParameters);
             var config = CreateContractsDataApiConfiguration(queryParams);
 
-            var stringContent = new StringContent(string.Empty);
+            var stringContent = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
 
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
             _mockHttp
-                .Expect(HttpMethod.Get, config.ApiBaseAddress + config.ContractReminderEndpoint.Endpoint)
+                .Expect(HttpMethod.Get, config.ApiBaseAddress + Constants.ContractReminderEndpoint)
                 .WithQueryString(queryParams)
                 .Respond(HttpStatusCode.OK, stringContent);
 
@@ -159,19 +154,19 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         {
             // Arrange
             ContractReminderMessage actualReminder = null;
-            IDictionary<string, string> actualDictionary = null;
+            string actualQueueName = null;
             var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
 
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
-            Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
+            Mock.Get(_azureServiceBusMessagingService)
+                .Setup(p => p.SendMessageAsync(It.IsAny<string>(), It.IsAny<ContractReminderMessage>()))
                 .Returns(Task.CompletedTask)
-                .Callback((ContractReminderMessage reminder, IDictionary<string, string> props) =>
+                .Callback((string queueName, ContractReminderMessage reminder) =>
                 {
                     actualReminder = reminder;
-                    actualDictionary = props;
+                    actualQueueName = queueName;
                 })
                 .Verifiable();
 
@@ -188,7 +183,6 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             // Assert
             act.Should().NotThrow();
             actualReminder.ContractId.Should().Be(_contract.Id);
-            actualDictionary["messageType"].Should().Be(ContractReminderMessage.MessageProcessor_ContractReminderMessage);
             VerifyAll();
         }
 
@@ -201,9 +195,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
-            Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
-                .Throws(new ServiceBusTimeoutException(TestServiceBusExceptionMessage))
+            Mock.Get(_azureServiceBusMessagingService)
+                .Setup(p => p.SendMessageAsync(It.IsAny<string>(), It.IsAny<ContractReminderMessage>()))
+                .Throws(new ServiceBusException(TestServiceBusExceptionMessage, ServiceBusFailureReason.ServiceTimeout))
                 .Verifiable();
 
             ContractNotificationService service = CreateContractNotificationService(config);
@@ -213,8 +207,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
 
             // Assert
             act
-                .Should().Throw<ServiceBusTimeoutException>()
-                .WithMessage(TestServiceBusExceptionMessage);
+                .Should().Throw<ServiceBusException>()
+                .And.Message.Contains(TestServiceBusExceptionMessage);
 
             VerifyAll();
         }
@@ -228,8 +222,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
-            Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
+            Mock.Get(_azureServiceBusMessagingService)
+                .Setup(p => p.SendMessageAsync(It.IsAny<string>(), It.IsAny<ContractReminderMessage>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -258,8 +252,8 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             Mock.Get(_contractsLogger)
                 .Setup(p => p.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));
 
-            Mock.Get(_sbMessagingService)
-                .Setup(p => p.SendAsBinaryXmlMessageAsync(It.IsAny<ContractReminderMessage>(), It.IsAny<IDictionary<string, string>>()))
+            Mock.Get(_azureServiceBusMessagingService)
+                .Setup(p => p.SendMessageAsync(It.IsAny<string>(), It.IsAny<ContractReminderMessage>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -292,7 +286,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
 
             _mockHttp
-                .Expect(HttpMethod.Patch, TestBaseAddress + config.ContractReminderPatchEndpoint.Endpoint)
+                .Expect(HttpMethod.Patch, TestBaseAddress + Constants.ContractReminderPatchEndpoint)
                 .WithContent(updateContent)
                 .Respond(HttpStatusCode.OK);
 
@@ -329,7 +323,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Setup(p => p.LogError(It.IsAny<ApiGeneralException>(), It.IsAny<string>(), It.IsAny<object[]>()));
 
             _mockHttp
-                .Expect(HttpMethod.Patch, TestBaseAddress + config.ContractReminderPatchEndpoint.Endpoint)
+                .Expect(HttpMethod.Patch, TestBaseAddress + Constants.ContractReminderPatchEndpoint)
                 .WithContent(updateContent)
                 .Respond(HttpStatusCode.InternalServerError, new StringContent(string.Empty));
 
@@ -352,7 +346,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             var config = CreateContractsDataApiConfiguration(new Dictionary<string, string>());
 
             _mockHttp
-                .Expect(HttpMethod.Patch, TestBaseAddress + config.ContractReminderPatchEndpoint.Endpoint)
+                .Expect(HttpMethod.Patch, TestBaseAddress + Constants.ContractReminderPatchEndpoint)
                 .WithContent(updateContent)
                 .Respond(HttpStatusCode.OK);
 
@@ -388,7 +382,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 authService,
                 httpClient,
                 Options.Create(contractsConfig),
-                _sbMessagingService,
+                _azureServiceBusMessagingService,
                 _contractsLogger,
                 _auditService);
 
@@ -405,7 +399,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 authService,
                 httpClient,
                 Options.Create(contractsConfig),
-                _sbMessagingService,
+                _azureServiceBusMessagingService,
                 _contractsLogger,
                 _auditService);
 
@@ -475,14 +469,9 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             => new ContractsDataApiConfiguration()
             {
                 ApiBaseAddress = TestBaseAddress,
-                ContractReminderEndpoint = new QuerystringEndpointConfiguration()
+                ContractReminderQuerystring = new QuerystringEndpointConfiguration()
                 {
-                    Endpoint = TestContractGetEndpoint,
                     QueryParameters = queryParameters
-                },
-                ContractReminderPatchEndpoint = new EndpointConfiguration()
-                {
-                    Endpoint = TestContractPatchEndpoint
                 }
             };
 
@@ -496,7 +485,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
             _mockHttp.VerifyNoOutstandingExpectation();
             Mock.Get(_contractsLogger).VerifyAll();
             Mock.Get(_auditService).VerifyAll();
-            Mock.Get(_sbMessagingService).VerifyAll();
+            Mock.Get(_azureServiceBusMessagingService).VerifyAll();
         }
 
         #endregion Verify Helpers

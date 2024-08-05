@@ -8,7 +8,6 @@ using Pds.Contracts.Notifications.Services.Models;
 using Pds.Core.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Pds.Contracts.Notifications.Services.Tests.Unit

@@ -6,9 +6,10 @@ using Pds.Contracts.Notifications.Services.Implementations;
 using Pds.Contracts.Notifications.Services.Interfaces;
 using Pds.Contracts.Notifications.Services.Models;
 using Pds.Contracts.Notifications.Services.Tests.Extensions;
+using Pds.Core.AzureServiceBusMessaging.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using ConfigurationConstants = Pds.Contracts.Notifications.Services.Configuration;
 using SFS = Sfa.Sfs.Contracts.Messaging;
 
 namespace Pds.Contracts.Notifications.Services.Tests.Unit
@@ -17,18 +18,17 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
     public class ContractStatusChangePublisherTests
     {
         private readonly Contract _dummyContract;
-        private readonly IServiceBusMessagingService _mockServiceBusMessagingService;
+        private readonly IAzureServiceBusMessagingService _mockAzureServiceBusMessagingService;
         private readonly IAuditService _mockAuditService;
         private readonly ILogger<IContractStatusChangePublisher> _mockLogger;
 
         public ContractStatusChangePublisherTests()
         {
             _dummyContract = new Models.Contract { Id = 1, ContractNumber = "Test", ContractVersion = 1, Ukprn = 123456 };
-            _mockServiceBusMessagingService = Mock.Of<IServiceBusMessagingService>(MockBehavior.Strict);
+            _mockAzureServiceBusMessagingService = Mock.Of<IAzureServiceBusMessagingService>(MockBehavior.Strict);
             _mockAuditService = Mock.Of<IAuditService>(MockBehavior.Strict);
             _mockLogger = Mock.Of<ILogger<Interfaces.IContractStatusChangePublisher>>(MockBehavior.Strict);
 
-            SetupNotifyAsyncPrivateMethodCalls();
             Mock.Get(_mockLogger)
                 .Setup(l => l.Log(LogLevel.Information, 0, It.IsAny<It.IsAnyType>(), null, It.IsAny<Func<It.IsAnyType, Exception, string>>()));
         }
@@ -37,6 +37,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         public async Task NotifyContractApprovedTestAsync()
         {
             // Arrange
+            SetupNotifyAsyncPrivateMethodCalls(ConfigurationConstants.Constants.ContractApprovedEmailQueue);
             _dummyContract.Status = ContractStatus.Approved;
             var expectedMessage = new SFS.ContractApprovedMessage { ContractId = _dummyContract.Id };
             var expectedAuditMessage = new Audit.Api.Client.Models.Audit
@@ -48,19 +49,20 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 User = "System_NotificationFunction"
             };
 
-            var publisher = new ContractStatusChangePublisher(_mockServiceBusMessagingService, _mockAuditService, _mockLogger);
+            var publisher = new ContractStatusChangePublisher(_mockAzureServiceBusMessagingService, _mockAuditService, _mockLogger);
 
             // Act
             await publisher.NotifyContractApprovedAsync(_dummyContract);
 
             // Assert
-            VerifyAllMocks(expectedMessage, expectedAuditMessage);
+            VerifyAllMocks(expectedMessage, expectedAuditMessage, ConfigurationConstants.Constants.ContractApprovedEmailQueue);
         }
 
         [TestMethod]
         public async Task NotifyContractChangesAreReadyForReviewTestAsync()
         {
             // Arrange
+            SetupNotifyAsyncPrivateMethodCalls(ConfigurationConstants.Constants.ContractReadyToReviewEmailQueue);
             _dummyContract.Status = ContractStatus.Approved;
             var expectedMessage = new SFS.ContractReadyToReviewEmailMessage { ContractNumber = _dummyContract.ContractNumber, Ukprn = _dummyContract.Ukprn, VersionNumber = _dummyContract.ContractVersion };
             var expectedAuditMessage = new Audit.Api.Client.Models.Audit
@@ -72,19 +74,20 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 User = "System_NotificationFunction"
             };
 
-            var publisher = new ContractStatusChangePublisher(_mockServiceBusMessagingService, _mockAuditService, _mockLogger);
+            var publisher = new ContractStatusChangePublisher(_mockAzureServiceBusMessagingService, _mockAuditService, _mockLogger);
 
             // Act
             await publisher.NotifyContractChangesAreReadyForReviewAsync(_dummyContract);
 
             // Assert
-            VerifyAllMocks(expectedMessage, expectedAuditMessage);
+            VerifyAllMocks(expectedMessage, expectedAuditMessage, ConfigurationConstants.Constants.ContractReadyToReviewEmailQueue);
         }
 
         [TestMethod]
         public async Task NotifyContractIsReadyToSignTestAsync()
         {
             // Arrange
+            SetupNotifyAsyncPrivateMethodCalls(ConfigurationConstants.Constants.ContractReadyToSignEmailQueue);
             _dummyContract.Status = ContractStatus.PublishedToProvider;
             var expectedMessage = new SFS.ContractReadyToSignEmailMessage { ContractNumber = _dummyContract.ContractNumber, Ukprn = _dummyContract.Ukprn, VersionNumber = _dummyContract.ContractVersion };
             var expectedAuditMessage = new Audit.Api.Client.Models.Audit
@@ -96,13 +99,13 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 User = "System_NotificationFunction"
             };
 
-            var publisher = new ContractStatusChangePublisher(_mockServiceBusMessagingService, _mockAuditService, _mockLogger);
+            var publisher = new ContractStatusChangePublisher(_mockAzureServiceBusMessagingService, _mockAuditService, _mockLogger);
 
             // Act
             await publisher.NotifyContractIsReadyToSignAsync(_dummyContract);
 
             // Assert
-            VerifyAllMocks(expectedMessage, expectedAuditMessage);
+            VerifyAllMocks(expectedMessage, expectedAuditMessage, ConfigurationConstants.Constants.ContractReadyToSignEmailQueue);
         }
 
         [DataTestMethod]
@@ -111,6 +114,7 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
         public async Task NotifyContractWithdrawnTestAsync(ContractStatus withdrawnStatus)
         {
             // Arrange
+            SetupNotifyAsyncPrivateMethodCalls(ConfigurationConstants.Constants.ContractWithdrawnEmailQueue);
             _dummyContract.Status = withdrawnStatus;
             var expectedMessage = new SFS.ContractWithdrawnEmailMessage { ContractNumber = _dummyContract.ContractNumber, Ukprn = _dummyContract.Ukprn, VersionNumber = _dummyContract.ContractVersion };
             var expectedAuditMessage = new Audit.Api.Client.Models.Audit
@@ -122,19 +126,19 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 User = "System_NotificationFunction"
             };
 
-            var publisher = new ContractStatusChangePublisher(_mockServiceBusMessagingService, _mockAuditService, _mockLogger);
+            var publisher = new ContractStatusChangePublisher(_mockAzureServiceBusMessagingService, _mockAuditService, _mockLogger);
 
             // Act
             await publisher.NotifyContractWithdrawnAsync(_dummyContract);
 
             // Assert
-            VerifyAllMocks(expectedMessage, expectedAuditMessage);
+            VerifyAllMocks(expectedMessage, expectedAuditMessage, ConfigurationConstants.Constants.ContractWithdrawnEmailQueue);
         }
 
-        private void SetupNotifyAsyncPrivateMethodCalls()
+        private void SetupNotifyAsyncPrivateMethodCalls(string queueName)
         {
-            Mock.Get(_mockServiceBusMessagingService)
-                .Setup(sbs => sbs.SendAsBinaryXmlMessageAsync(It.IsAny<It.IsAnyType>(), It.IsAny<IDictionary<string, string>>()))
+            Mock.Get(_mockAzureServiceBusMessagingService)
+                .Setup(sbs => sbs.SendMessageAsync(queueName, It.IsAny<It.IsAnyType>()))
                 .Returns(Task.CompletedTask);
 
             Mock.Get(_mockAuditService)
@@ -142,11 +146,11 @@ namespace Pds.Contracts.Notifications.Services.Tests.Unit
                 .Returns(Task.CompletedTask);
         }
 
-        private void VerifyAllMocks<T>(T message, Audit.Api.Client.Models.Audit auditMessage)
+        private void VerifyAllMocks<T>(T message, Audit.Api.Client.Models.Audit auditMessage, string queueName)
         {
             Mock.Get(_mockLogger).VerifyAll();
-            Mock.Get(_mockServiceBusMessagingService)
-                .Verify(sbs => sbs.SendAsBinaryXmlMessageAsync(ItIs.EquivalentTo(message), It.Is<IDictionary<string, string>>(m => m["messageType"] == typeof(T).FullName)), Times.Once);
+            Mock.Get(_mockAzureServiceBusMessagingService)
+                .Verify(sbs => sbs.SendMessageAsync(ItIs.EquivalentTo(queueName), ItIs.EquivalentTo(message)), Times.Once);
 
             Mock.Get(_mockAuditService)
                 .Verify(a => a.AuditAsync(ItIs.EquivalentTo(auditMessage)), Times.Once);

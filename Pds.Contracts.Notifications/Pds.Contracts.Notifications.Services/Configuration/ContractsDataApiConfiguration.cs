@@ -8,13 +8,8 @@ namespace Pds.Contracts.Notifications.Services.Configuration
     public class ContractsDataApiConfiguration : BaseApiClientConfiguration
     {
         /// <summary>
-        /// Gets or sets the contact reminder endpoint configuration settings.
+        /// Gets or sets the contact reminder query configuration settings.
         /// </summary>
-        public QuerystringEndpointConfiguration ContractReminderEndpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets the contract reminder patch endpoint settings.
-        /// </summary>
-        public EndpointConfiguration ContractReminderPatchEndpoint { get; set; }
+        public QuerystringEndpointConfiguration ContractReminderQuerystring { get; set; }
     }
 }

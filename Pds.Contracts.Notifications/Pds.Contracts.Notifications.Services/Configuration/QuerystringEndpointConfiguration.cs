@@ -3,9 +3,9 @@
 namespace Pds.Contracts.Notifications.Services.Configuration
 {
     /// <summary>
-    /// Endpoint configuration with querystring data.
+    /// Querystring data for endpoint.
     /// </summary>
-    public class QuerystringEndpointConfiguration : EndpointConfiguration
+    public class QuerystringEndpointConfiguration
     {
         /// <summary>
         /// Gets or sets a collection of query parameters.

@@ -10,8 +10,15 @@ namespace Pds.Contracts.Notifications.Services.Tests.Extensions
         {
             Func<T, bool> validate = actual =>
             {
-                actual.Should().BeEquivalentTo(expected);
-                return true;
+                try
+                {
+                    actual.Should().BeEquivalentTo(expected);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
             };
 
             return Match.Create<T>(s => validate(s));
