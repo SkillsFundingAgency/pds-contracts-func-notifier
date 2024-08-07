@@ -4,8 +4,8 @@ using Pds.Contracts.Notifications.Services.Configuration;
 using Pds.Contracts.Notifications.Services.Interfaces;
 using Pds.Contracts.Notifications.Services.Models;
 using Pds.Contracts.Notifications.Services.Utilities;
+using Pds.Core.AzureServiceBusMessaging.Interfaces;
 using Sfa.Sfs.Contracts.Messaging;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -16,19 +16,22 @@ namespace Pds.Contracts.Notifications.Services.Implementations
     /// </summary>
     public class ContractStatusChangePublisher : IContractStatusChangePublisher
     {
-        private readonly IServiceBusMessagingService _serviceBusMessagingService;
+        private readonly IAzureServiceBusMessagingService _azureServiceBusMessagingService;
         private readonly IAuditService _auditService;
         private readonly ILogger<IContractStatusChangePublisher> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractStatusChangePublisher"/> class.
         /// </summary>
-        /// <param name="serviceBusMessagingService">The messaging service to use for queuing status change messages.</param>
+        /// <param name="azureServiceBusMessagingService">The messaging service to use for queuing status change messages.</param>
         /// <param name="auditService">The shared audit service.</param>
         /// <param name="logger">The logger.</param>
-        public ContractStatusChangePublisher(IServiceBusMessagingService serviceBusMessagingService, IAuditService auditService, ILogger<IContractStatusChangePublisher> logger)
+        public ContractStatusChangePublisher(
+            IAzureServiceBusMessagingService azureServiceBusMessagingService,
+            IAuditService auditService,
+            ILogger<IContractStatusChangePublisher> logger)
         {
-            _serviceBusMessagingService = serviceBusMessagingService;
+            _azureServiceBusMessagingService = azureServiceBusMessagingService;
             _auditService = auditService;
             _logger = logger;
         }
@@ -38,7 +41,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
         {
             _logger.LogInformation($"Queuing contract approval email for contract [{contract.ContractNumber}].");
             var message = new ContractApprovedMessage { ContractId = contract.Id };
-            await NotifyAsync(message, contract, nameof(NotifyContractApprovedAsync));
+            await NotifyAsync(message, contract, nameof(NotifyContractApprovedAsync), Constants.ContractApprovedEmailQueue);
         }
 
         /// <inheritdoc/>
@@ -51,7 +54,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                 Ukprn = contract.Ukprn,
                 VersionNumber = contract.ContractVersion
             };
-            await NotifyAsync(message, contract, nameof(NotifyContractChangesAreReadyForReviewAsync));
+            await NotifyAsync(message, contract, nameof(NotifyContractChangesAreReadyForReviewAsync), Constants.ContractReadyToReviewEmailQueue);
         }
 
         /// <inheritdoc/>
@@ -64,7 +67,7 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                 Ukprn = contract.Ukprn,
                 VersionNumber = contract.ContractVersion
             };
-            await NotifyAsync(message, contract, nameof(NotifyContractIsReadyToSignAsync));
+            await NotifyAsync(message, contract, nameof(NotifyContractIsReadyToSignAsync), Constants.ContractReadyToSignEmailQueue);
         }
 
         /// <inheritdoc/>
@@ -77,17 +80,12 @@ namespace Pds.Contracts.Notifications.Services.Implementations
                 Ukprn = contract.Ukprn,
                 VersionNumber = contract.ContractVersion
             };
-            await NotifyAsync(message, contract, nameof(NotifyContractWithdrawnAsync));
+            await NotifyAsync(message, contract, nameof(NotifyContractWithdrawnAsync), Constants.ContractWithdrawnEmailQueue);
         }
 
-        private async Task NotifyAsync<T>(T message, Contract contract, string component)
+        private async Task NotifyAsync<T>(T message, Contract contract, string component, string queueName)
         {
-            IDictionary<string, string> properties = new Dictionary<string, string>()
-            {
-                { "messageType", typeof(T).FullName }
-            };
-
-            await _serviceBusMessagingService.SendAsBinaryXmlMessageAsync(message, properties);
+            await _azureServiceBusMessagingService.SendMessageAsync(queueName, message);
             await _auditService.AuditAsync(
                 new Pds.Audit.Api.Client.Models.Audit
                 {

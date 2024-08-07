@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Pds.Contracts.Notifications.Services.Interfaces;
@@ -29,7 +28,7 @@ namespace Pds.Contracts.Notifications.Func.Tests.Unit
             Func<Task> act = async () => { await function.RunAsync(new Contract(), null); };
 
             // Assert
-            act.Should().NotThrow();
+            act.Should().NotThrowAsync();
             mockService.Verify();
         }
 
@@ -44,7 +43,7 @@ namespace Pds.Contracts.Notifications.Func.Tests.Unit
             Func<Task> act = async () => { await function.RunAsync(null, null); };
 
             // Assert
-            act.Should().Throw<ArgumentNullException>();
+            act.Should().ThrowAsync<ArgumentNullException>();
             mockService.VerifyNoOtherCalls();
         }
     }

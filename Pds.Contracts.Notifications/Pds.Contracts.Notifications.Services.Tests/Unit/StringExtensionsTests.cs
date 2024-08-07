@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Pds.Contracts.Notifications.Services.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Pds.Contracts.Notifications.Services.Tests.Unit
 {

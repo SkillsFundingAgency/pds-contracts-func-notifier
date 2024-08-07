@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
@@ -31,12 +31,22 @@
     "sharedServiceBusName": {
       "type": "string"
     },
+    "sharedServiceBusQueueName": {
+      "type": "string",
+      "defaultValue": "pds-shared-emailprocessor"
+    },
     "serviceBusAccessKeyName": {
       "type": "string",
       "defaultValue": "pds-contracts-domain"
     },
     "sharedStorageAccountName": {
       "type": "string"
+    },
+    "sharedKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the key vault where the secrets are stored"
+      }
     },
     "ActionGroupName": {
       "type": "string",
@@ -53,14 +63,11 @@
     "ContractApiBaseAddress": {
       "type": "string"
     },
-    "ContractApiTenantId": {
+    "DataApiTenantId": {
       "type": "string"
     },
     "ContractApiClientId": {
       "type": "string"
-    },
-    "ContractApiClientSecret": {
-      "type": "securestring"
     },
     "ContractApiAppUri": {
       "type": "string"
@@ -74,22 +81,9 @@
     "AuditApiClientId": {
       "type": "string"
     },
-    "AuditApiClientSecret": {
-      "type": "securestring"
-    },
     "AuditApiAppUri": {
       "type": "string"
-    },
-    "MonolithServiceBusConnectionString": {
-      "type": "securestring",
-      "metadata": {
-        "description": "The connection string to the monoliths service bus"
-      }
-    },
-    "ContractApiContractRemindersEndpoint": {
-      "type": "string",
-      "defaultValue": "/api/contractReminders"
-    },
+    },    
     "ContractApiContractRemindersEndpointReminderInterval": {
       "type": "string",
       "defaultValue": "14"
@@ -101,10 +95,6 @@
     "ContractApiContractRemindersEndpointCount": {
       "type": "string",
       "defaultValue": "25"
-    },
-    "ContractApiContractReminderPatchEndpoint": {
-      "type": "string",
-      "defaultValue": "/api/contractReminder"
     },
     "HttpPolicyRetryCount": {
       "type": "string",
@@ -121,7 +111,37 @@
     "HttpPolicyDurationOfCircuitBreak": {
       "type": "string",
       "defaultValue": "0.00:00:15"
-    }
+    },
+    "FundingClaimsDataAPIBaseAddress": {
+      "type": "string"
+    },
+    "FundingClaimsDataAPIAppURI": {
+      "type": "string"
+    },
+    "FundingClaimsDataAPIClientID": {
+      "type": "string"
+    },
+    "SubContractorDataAPIBaseAddress": {
+      "type": "string"
+    },
+    "SubContractorDataAPIAppURI": {
+      "type": "string"
+    },
+    "SubContractorDataAPIClientID": {
+      "type": "string"
+    },
+    "CdsUserExceptionEmail": {
+      "type": "string"
+    },
+    "ServiceNowEmailAddress": {
+      "type": "string"
+    },
+    "DfESigninPublicApiUrl": {
+      "type": "string"
+    },
+    "DfESigninPublicApiClientID": {
+      "type": "string"
+    }    
   },
   "variables": {
     "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/funding-platform-building-blocks/master/templates/",
@@ -133,7 +153,7 @@
     "contractApprovedSubscriptionName": "[concat('contract-approved-subscription-', parameters('resourceEnvironmentName'))]",
     "contractReadyToReviewSubscriptionName": "[concat('contract-readytoreview-subscription-', parameters('resourceEnvironmentName'))]",
     "contractWithdrawnSubscriptionName": "[concat('contract-withdrawn-subscription-', parameters('resourceEnvironmentName'))]",
-    "emailQueueName": "[concat('contractsqueue-', parameters('resourceEnvironmentName'))]",
+    "configurationAuthority": "https://login.microsoftonline.com/",
     "EnvironmentToEnableAlertsUpon": ["demo", "oat", "release"],
     "EnableAlertsAndMetrics": "[contains(variables('EnvironmentToEnableAlertsUpon'), toLower(parameters('resourceEnvironmentName')))]",
     "AppServicePlanMetricsToAlertUpon": [
@@ -350,7 +370,7 @@
               },
               {
                 "name": "FUNCTIONS_EXTENSION_VERSION",
-                "value": "~3"
+                "value": "~4"
               },
               {
                 "name": "FUNCTIONS_WORKER_RUNTIME",
@@ -382,11 +402,11 @@
               },
               {
                 "name": "ContractsDataApiConfiguration:Authority",
-                "value": "https://login.microsoftonline.com/"
+                "value": "[variables('configurationAuthority')]"
               },
               {
                 "name": "ContractsDataApiConfiguration:TenantId",
-                "value": "[parameters('ContractApiTenantId')]"
+                "value": "[parameters('DataApiTenantId')]"
               },
               {
                 "name": "ContractsDataApiConfiguration:ClientId",
@@ -394,43 +414,35 @@
               },
               {
                 "name": "ContractsDataApiConfiguration:ClientSecret",
-                "value": "[parameters('ContractApiClientSecret')]"
+                "value": "[concat('@Microsoft.KeyVault(VaultName=', parameters('sharedKeyVaultName'), ';SecretName=ContractsDataApiClientSecret)')]"
               },
               {
                 "name": "ContractsDataApiConfiguration:AppUri",
                 "value": "[parameters('ContractApiAppUri')]"
-              },
+              },              
               {
-                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:Endpoint",
-                "value": "[parameters('ContractApiContractRemindersEndpoint')]"
-              },
-              {
-                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:QueryParameters:reminderInterval",
+                "name": "ContractsDataApiConfiguration:ContractReminderQuerystring:QueryParameters:reminderInterval",
                 "value": "[parameters('ContractApiContractRemindersEndpointReminderInterval')]"
               },
               {
-                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:QueryParameters:page",
+                "name": "ContractsDataApiConfiguration:ContractReminderQuerystring:QueryParameters:page",
                 "value": "[parameters('ContractApiContractRemindersEndpointPage')]"
               },
               {
-                "name": "ContractsDataApiConfiguration:ContractReminderEndpoint:QueryParameters:count",
+                "name": "ContractsDataApiConfiguration:ContractReminderQuerystring:QueryParameters:count",
                 "value": "[parameters('ContractApiContractRemindersEndpointCount')]"
-              },
-              {
-                "name": "ContractsDataApiConfiguration:ContractReminderPatchEndpoint:Endpoint",
-                "value": "[parameters('ContractApiContractReminderPatchEndpoint')]"
-              },
+              },              
               {
                 "name": "AuditApiConfiguration:ApiBaseAddress",
                 "value": "[parameters('AuditApiBaseAddress')]"
               },
               {
                 "name": "AuditApiConfiguration:Authority",
-                "value": "https://login.microsoftonline.com/"
+                "value": "[variables('configurationAuthority')]"
               },
               {
                 "name": "AuditApiConfiguration:TenantId",
-                "value": "[parameters('AuditApiTenantId')]"
+                "value": "[parameters('DataApiTenantId')]"
               },
               {
                 "name": "AuditApiConfiguration:ClientId",
@@ -438,7 +450,7 @@
               },
               {
                 "name": "AuditApiConfiguration:ClientSecret",
-                "value": "[parameters('AuditApiClientSecret')]"
+                "value": "[concat('@Microsoft.KeyVault(VaultName=', parameters('sharedKeyVaultName'), ';SecretName=SharedAuditDataApiSecret)')]"
               },
               {
                 "name": "AuditApiConfiguration:AppUri",
@@ -459,18 +471,14 @@
               {
                 "name": "HttpPolicyOptions:CircuitBreakerDurationOfBreak",
                 "value": "[parameters('HttpPolicyDurationOfCircuitBreak')]"
-              },
-              {
-                "name": "MonolithServiceBusConfiguration:ConnectionString",
-                "value": "[parameters('MonolithServiceBusConnectionString')]"
-              },
-              {
-                "name": "MonolithServiceBusConfiguration:QueueName",
-                "value": "[variables('emailQueueName')]"
-              },
+              },              
               {
                 "name": "NotifierServiceBusConnectionString",
                 "value": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]"
+              },
+              {
+                "name": "NotifierServiceBusQueueName",
+                "value": "[parameters('sharedServiceBusQueueName')]"
               },
               {
                 "name": "Pds.Contracts.ReadyToSign.Subscription",
@@ -487,8 +495,79 @@
               {
                 "name": "Pds.Contracts.Withdrawn.Subscription",
                 "value": "[variables('contractWithdrawnSubscriptionName')]"
+              },
+              {
+                "name": "AzureServiceBusMessaging:ConnectionString",
+                "value": "[listKeys(resourceId(parameters('sharedResourceGroupName'),'Microsoft.ServiceBus/namespaces/AuthorizationRules',parameters('sharedServiceBusName'), parameters('serviceBusAccessKeyName')),'2015-08-01').primaryConnectionString]"
+              },
+              {
+                "name": "CdsUserExceptionEmail",
+                "value": "[parameters('CdsUserExceptionEmail')]"
+              },
+              {
+                "name": "ServiceNowEmailAddress",
+                "value": "[parameters('ServiceNowEmailAddress')]"
+              },
+              {
+                "name": "FundingClaimsDataApiConfiguration:ApiBaseAddress",
+                "value": "[parameters('FundingClaimsDataAPIBaseAddress')]"
+              },
+              {
+                "name": "FundingClaimsDataApiConfiguration:AppUri",
+                "value": "[parameters('FundingClaimsDataAPIAppURI')]"
+              },
+              {
+                "name": "FundingClaimsDataApiConfiguration:Authority",
+                "value": "[variables('configurationAuthority')]"
+              },
+              {
+                "name": "FundingClaimsDataApiConfiguration:ClientId",
+                "value": "[parameters('FundingClaimsDataAPIClientID')]"
+              },
+              {
+                "name": "FundingClaimsDataApiConfiguration:ClientSecret",
+                "value": "[concat('@Microsoft.KeyVault(VaultName=', parameters('sharedKeyVaultName'), ';SecretName=FundingClaimsDataApiSecret)')]"
+              },
+              {
+                "name": "FundingClaimsDataApiConfiguration:TenantId",
+                "value": "[parameters('DataApiTenantId')]"
+              },              
+              {
+                "name": "SubcontractorDeclarationDataApiConfiguration:ApiBaseAddress",
+                "value": "[parameters('SubContractorDataAPIBaseAddress')]"
+              },
+              {
+                "name": "SubcontractorDeclarationDataApiConfiguration:AppUri",
+                "value": "[parameters('SubContractorDataAPIAppURI')]"
+              },
+              {
+                "name": "SubcontractorDeclarationDataApiConfiguration:Authority",
+                "value": "[variables('configurationAuthority')]"
+              },
+              {
+                "name": "SubcontractorDeclarationDataApiConfiguration:ClientId",
+                "value": "[parameters('SubContractorDataAPIClientID')]"
+              },
+              {
+                "name": "SubcontractorDeclarationDataApiConfiguration:ClientSecret",
+                "value": "[concat('@Microsoft.KeyVault(VaultName=', parameters('sharedKeyVaultName'), ';SecretName=ContractsDataApiClientSecret)')]"
+              },
+              {
+                "name": "SubcontractorDeclarationDataApiConfiguration:TenantId",
+                "value": "[parameters('DataApiTenantId')]"
+              },
+              {
+                "name": "DfESignin:PublicApi:Url",
+                "value": "[parameters('DfESigninPublicApiUrl')]"
+              },
+              {
+                "name": "DfESignin:PublicApi:ClientID",
+                "value": "[parameters('DfESigninPublicApiClientID')]"
+              },
+              {
+                "name": "DfESignin:PublicApi:ClientSecret",
+                "value": "[concat('@Microsoft.KeyVault(VaultName=', parameters('sharedKeyVaultName'), ';SecretName=DfESigninPublicApiClientSecret)')]"
               }
-              
             ]
           }
         }
