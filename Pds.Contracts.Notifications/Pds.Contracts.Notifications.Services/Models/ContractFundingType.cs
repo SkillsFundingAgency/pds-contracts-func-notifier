@@ -140,9 +140,108 @@ namespace Pds.Contracts.Notifications.Services.Models
         FurtherEducationConditionAllocation = 21,
 
         /// <summary>
-        /// The procured nineteen to twenty four traineeship
+        /// Procured 19 to 24 traineeships.
         /// </summary>
         [Display(Name = "Procured 19 to 24 traineeship", Description = "Procured 19 to 24 traineeship")]
-        ProcuredNineteenToTwentyFourTraineeship = 22
+        ProcuredNineteenToTwentyFourTraineeship = 22,
+
+        /// <summary>
+        /// Adult Education Budget (Contract for Service).
+        /// </summary>
+        [Display(Name = "Adult Education Budget (Contract for Service)", Description = "Adult Education Budget (Contract for Service)")]
+        AdultEducationBudgetContractForService = 23,
+
+
+        /// <summary>
+        /// Higher Technical Education Provider Growth Fund.
+        /// </summary>
+        [Display(Name = "Higher technical education provider growth fund", Description = "Higher technical education provider growth fund")]
+        HigherTechnicalEducation = 24,
+
+        /// <summary>
+        /// Skills Accelerator Development Fund.
+        /// </summary>
+        [Display(Name = "Skills accelerator development fund", Description = "Skills accelerator development fund")]
+        SkillsAcceleratorDevelopment = 25,
+
+        /// <summary>
+        /// Further Education Professional Development Grants Pilot.
+        /// </summary>
+        [Display(Name = "Further education professional development grants", Description = "Further education professional development grants")]
+        FurtherEducationProfessionalDevelopmentGrants = 26,
+
+        /// <summary>
+        /// Strategic development fund II.
+        /// </summary>
+        [Display(Name = "Strategic Development Fund II", Description = "Strategic Development Fund II")]
+        StrategicDevelopmentFund2 = 27,
+
+        /// <summary>
+        /// SKILLS BOOTCAMPS.
+        /// </summary>
+        [Display(Name = "Skills bootcamps", Description = "Skills bootcamps")]
+        SkillsBootcamps = 28,
+
+        /// <summary>
+        /// Multiply Programme.
+        /// </summary>
+        [Display(Name = "Multiply", Description = "Multiply")]
+        Multiply = 29,
+
+        /// <summary>
+        /// Additional capital allocations.
+        /// </summary>
+        [Display(Name = "Additional capital allocations", Description = "Additional capital allocations")]
+        AdditionalCapitalAllocations = 30,
+
+        /// <summary>
+        /// Higher technical education skills injection fund.
+        /// </summary>
+        [Display(Name = "Higher technical education skills injection fund", Description = "Higher technical education skills injection fund")]
+        HigherTechnicalEducationSkillsInjectionFund = 31,
+
+        /// <summary>
+        /// FE Reclassification Capital Allocation.
+        /// </summary>
+        [Display(Name = "FE Reclassification Capital Allocation", Description = "FE Reclassification Capital Allocation")]
+        FEReclassificationCapitalAllocation = 32,
+
+        /// <summary>
+        /// FE Capital Transformation Fund Allocation.
+        /// </summary>
+        [Display(Name = "FE Capital Transformation Fund Allocation", Description = "FE Capital Transformation Fund Allocation")]
+        FECapitalTrandformationFundAllocation = 33,
+
+        /// <summary>
+        /// ESFA Adult Education Budget (procured from Aug 2023).
+        /// Shares AEB2023 funding type from FCS with ESFA Adult Skills Fund (procured from Aug 2023.
+        /// </summary>
+        [Display(Name = "ESFA Adult Education Budget (procured from Aug 2023)", Description = "ESFA Adult Education Budget (procured from Aug 2023)")]
+        AdultEducationBudgetProcured2023 = 34,
+
+        /// <summary>
+        /// Skills Bootcamps Dynamic Purchasing System.
+        /// </summary>
+        [Display(Name = "Skills bootcamps", Description = "Skills bootcamps dynamic purchasing system (DPS)")]
+        SkillsBootcampsDPS = 35,
+
+        /// <summary>
+        /// Higher technical education skills injection fund 2.
+        /// </summary>
+        [Display(Name = "Higher technical education skills injection fund 2", Description = "Higher technical education skills injection fund 2")]
+        HigherTechnicalEducationSkillsInjectionFund2 = 36,
+
+        /// <summary>
+        /// ESFA Adult Skills Fund (procured from Aug 2023).
+        /// Shares AEB2023 funding type from FCS with ESFA Adult Education Budget (procured from Aug 2023).
+        /// </summary>
+        [Display(Name = "ESFA Adult Skills Fund (procured from Aug 2023)", Description = "ESFA Adult Skills Fund (procured from Aug 2023)")]
+        AdultSkillsFundProcured2023 = 37,
+
+        /// <summary>
+        /// Taking teaching further.
+        /// </summary>
+        [Display(Name = "Taking teaching further", Description = "Taking teaching further")]
+        TakingTeachingFurther = 38
     }
 }
