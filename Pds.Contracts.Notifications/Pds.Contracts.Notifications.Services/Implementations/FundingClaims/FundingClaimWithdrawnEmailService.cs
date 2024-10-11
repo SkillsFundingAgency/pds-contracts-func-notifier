@@ -79,10 +79,10 @@ namespace Pds.Contracts.Notifications.Services.Implementations.FundingClaims
 
             var userContactsResponse = await _dfESignInPublicApi.GetUserContactsForOrganisation(currentFundingClaim.Ukprn, _requiredRoles);
 
-            var toFundingClaimRecipients = userContactsResponse.Users.Select(user => user.Email);
-
             if (userContactsResponse.Users.IsNotNullOrEmpty())
             {
+                var toFundingClaimRecipients = userContactsResponse.Users.Select(user => user.Email);
+
                 var previouslySignedFundingClaim = await Get<FundingClaim>($"{Constants.PreviouslySignedVersionOfFundingClaimByIdEndpoint}/{currentFundingClaim.Id}");
 
                 var personalisation = new Dictionary<string, object>()
