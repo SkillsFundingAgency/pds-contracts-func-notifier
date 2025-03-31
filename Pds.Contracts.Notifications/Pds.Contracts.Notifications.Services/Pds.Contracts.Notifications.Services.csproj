@@ -19,7 +19,7 @@
     <PackageReference Include="Pds.Core.ApiClient" Version="4.1.4" />
     <PackageReference Include="Pds.Core.AzureServiceBusMessaging" Version="1.0.1" />
     <PackageReference Include="Pds.Core.CodeAnalysis.StyleCop" Version="2.0.0" />
-    <PackageReference Include="Pds.Core.DfESignIn.ImplicitFlow" Version="4.0.34" />
+    <PackageReference Include="Pds.Core.DfESignIn.ImplicitFlow" Version="4.2.0" />
     <PackageReference Include="Pds.Core.Logging" Version="2.0.6" />
     <PackageReference Include="Pds.Core.Notification" Version="1.0.3" />
     <PackageReference Include="Pds.Core.Telemetry.ApplicationInsights" Version="2.1.1" />
