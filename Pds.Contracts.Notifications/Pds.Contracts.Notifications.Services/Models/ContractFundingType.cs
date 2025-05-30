@@ -242,6 +242,13 @@ namespace Pds.Contracts.Notifications.Services.Models
         /// Taking teaching further.
         /// </summary>
         [Display(Name = "Taking teaching further", Description = "Taking teaching further")]
-        TakingTeachingFurther = 38
+        TakingTeachingFurther = 38,
+
+        /// <summary>
+        /// DfE Adult Skills Fund.
+        /// Shares AEB2023 funding type from FCS with ESFA Adult Education Budget (procured from Aug 2023).
+        /// </summary>
+        [Display(Name = "DfE Adult Skills Fund", Description = "DfE Adult Skills Fund")]
+        AdultSkillsFund = 39
     }
 }
